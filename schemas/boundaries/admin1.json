@@ -1,0 +1,139 @@
+{
+  "$schema": "https://datapackage.org/profiles/2.0/tableschema.json",
+  "description": "Admin level 1 boundary layer. Exactly one of version or cod_version MUST be present per file.",
+  "fields": [
+    {
+      "name": "adm1_name",
+      "type": "string",
+      "description": "Admin level 1 unit name in the primary language (lang).",
+      "constraints": { "required": true, "maxLength": 100 }
+    },
+    {
+      "name": "adm1_name1",
+      "type": "string",
+      "description": "Admin level 1 unit name in the first alternate language (lang1). Must be null if lang1 is null.",
+      "constraints": { "maxLength": 100 }
+    },
+    {
+      "name": "adm1_name2",
+      "type": "string",
+      "description": "Admin level 1 unit name in the second alternate language (lang2). Must be null if lang2 is null.",
+      "constraints": { "maxLength": 100 }
+    },
+    {
+      "name": "adm1_name3",
+      "type": "string",
+      "description": "Admin level 1 unit name in the third alternate language (lang3). Must be null if lang3 is null.",
+      "constraints": { "maxLength": 100 }
+    },
+    {
+      "name": "adm1_pcode",
+      "type": "string",
+      "description": "Admin level 1 p-code. Must be alphanumeric only. Must start with adm0_pcode (hierarchical nesting).",
+      "constraints": { "required": true, "maxLength": 20, "pattern": "^[A-Za-z0-9]+$" }
+    },
+    {
+      "name": "adm0_name",
+      "type": "string",
+      "description": "Country name in the primary language (lang).",
+      "constraints": { "required": true, "maxLength": 100 }
+    },
+    {
+      "name": "adm0_name1",
+      "type": "string",
+      "description": "Country name in the first alternate language (lang1). Must be null if lang1 is null.",
+      "constraints": { "maxLength": 100 }
+    },
+    {
+      "name": "adm0_name2",
+      "type": "string",
+      "description": "Country name in the second alternate language (lang2). Must be null if lang2 is null.",
+      "constraints": { "maxLength": 100 }
+    },
+    {
+      "name": "adm0_name3",
+      "type": "string",
+      "description": "Country name in the third alternate language (lang3). Must be null if lang3 is null.",
+      "constraints": { "maxLength": 100 }
+    },
+    {
+      "name": "adm0_pcode",
+      "type": "string",
+      "description": "Country p-code. Should equal the ISO 3166-1 alpha-2 code (e.g. AF). Must be alphanumeric only.",
+      "constraints": { "required": true, "maxLength": 20, "pattern": "^[A-Za-z0-9]+$" }
+    },
+    {
+      "name": "valid_on",
+      "type": "datetime",
+      "description": "Timestamp (with timezone) when this version of the data was last updated. Constant across all rows in the file.",
+      "constraints": { "required": true }
+    },
+    {
+      "name": "valid_to",
+      "type": "datetime",
+      "description": "Timestamp when this version was superseded; null if this is the current version. Known deviation: some files store this without a timezone."
+    },
+    {
+      "name": "area_sqkm",
+      "type": "number",
+      "description": "Area of the polygon in square kilometres, computed in EPSG:6933 (equal-area projection)."
+    },
+    {
+      "name": "version",
+      "type": "string",
+      "description": "Dataset version string (e.g. v01). Exactly one of version or cod_version MUST be present. Preferred for new datasets."
+    },
+    {
+      "name": "cod_version",
+      "type": "string",
+      "description": "Legacy version string (e.g. V_01). Exactly one of version or cod_version MUST be present. Present in older datasets using the v_NN directory naming convention."
+    },
+    {
+      "name": "lang",
+      "type": "string",
+      "description": "BCP 47 language tag for adm*_name columns. Must be a romanized language (e.g. en, fr, es). Constant across all rows in the file.",
+      "constraints": { "required": true, "maxLength": 3, "pattern": "^[a-z]{2,3}$" }
+    },
+    {
+      "name": "lang1",
+      "type": "string",
+      "description": "BCP 47 language tag for adm*_name1 columns. Null if no first alternate language. Constant across all rows in the file.",
+      "constraints": { "maxLength": 3, "pattern": "^[a-z]{2,3}$" }
+    },
+    {
+      "name": "lang2",
+      "type": "string",
+      "description": "BCP 47 language tag for adm*_name2 columns. Null if no second alternate language. Constant across all rows in the file.",
+      "constraints": { "maxLength": 3, "pattern": "^[a-z]{2,3}$" }
+    },
+    {
+      "name": "lang3",
+      "type": "string",
+      "description": "BCP 47 language tag for adm*_name3 columns. Null if no third alternate language. Constant across all rows in the file.",
+      "constraints": { "maxLength": 3, "pattern": "^[a-z]{2,3}$" }
+    },
+    {
+      "name": "iso2",
+      "type": "string",
+      "description": "ISO 3166-1 alpha-2 country code (e.g. AF). Should be present per spec for schema consistency.",
+      "constraints": { "maxLength": 2 }
+    },
+    {
+      "name": "iso3",
+      "type": "string",
+      "description": "ISO 3166-1 alpha-3 country code (e.g. AFG). Should be present per spec for schema consistency.",
+      "constraints": { "maxLength": 3 }
+    },
+    {
+      "name": "center_lat",
+      "type": "number",
+      "description": "Latitude of a representative point guaranteed to be within the polygon (EPSG:4326). Should be generated using a Maximum Inscribed Circle (MIC) algorithm."
+    },
+    {
+      "name": "center_lon",
+      "type": "number",
+      "description": "Longitude of a representative point guaranteed to be within the polygon (EPSG:4326). Should be generated using a Maximum Inscribed Circle (MIC) algorithm."
+    }
+  ],
+  "primaryKey": ["adm1_pcode"]
+}
