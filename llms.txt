@@ -1,0 +1,16 @@
+# COD-AB Specification — AI Validator
+
+> This repository defines the COD-AB (Common Operational Dataset – Administrative Boundaries) format published by UN OCHA. It contains normative specifications for admin boundary files and metadata registries.
+
+To interactively validate a dataset against this specification, fetch the validator prompt and follow its instructions:
+
+- [validator.md](validator.md): Self-contained validation prompt. Fetch this file, then follow the instructions to begin a guided validation session with your data.
+
+## Specification files
+
+- [specs/boundaries.md](specs/boundaries.md): Admin boundary file overview, column order, and known deviations
+- [specs/boundaries/names.md](specs/boundaries/names.md): Name and language column schema
+- [specs/boundaries/codes.md](specs/boundaries/codes.md): P-code and version column schema
+- [specs/boundaries/attributes.md](specs/boundaries/attributes.md): Date, computed, and identifier column schema
+- [specs/file-structure.md](specs/file-structure.md): Directory and file naming conventions, CRS requirements
+- [specs/metadata.md](specs/metadata.md): Metadata registry table schema
