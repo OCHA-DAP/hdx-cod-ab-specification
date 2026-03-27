@@ -166,7 +166,7 @@ For each level L (0 ≤ L ≤ N):
 
 P-codes (place codes) are alphanumeric strings that uniquely identify an administrative unit. P-codes MUST be hierarchically nested: `adm{L}_pcode` MUST start with `adm{L-1}_pcode` for all L > 0. All p-codes in a column MUST be unique within the file (no duplicates at the same level). P-codes MUST be alphanumeric only (letters and digits, no spaces or special characters).
 
-The admin 0 p-code (`adm0_pcode`) SHOULD equal the country's ISO 3166-1 alpha-2 code (e.g., `AF` for Afghanistan).
+The admin 0 p-code (`adm0_pcode`) SHOULD equal the country's [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) code (e.g., `AF` for Afghanistan).
 
 ##### Relationship to Government Codes
 
@@ -197,22 +197,34 @@ P-codes SHOULD maintain continuity with the previous dataset version so that cod
 | --------- | ------ | -------------------------------------- |
 | `version` | string | Version string, e.g. `v01` or `v02.01` |
 
-`version` MUST be present in all datasets. The version string follows one of two formats depending on the nature of the change:
+`version` MUST be present in all datasets. The version string follows one of two formats:
 
 - **Major version** (`v{NN}`): used when the change status is major (e.g. `v03`).
 - **Minor version** (`v{NN}.{NN}`): used when the change status is minor (e.g. `v02.01`).
 
-A **major version** MUST be used when the change affects the boundaries themselves or the coding structure, including:
+The major component is zero-padded to two digits and starts at `v01`. The minor component is also zero-padded to two digits and resets to `01` on each major increment.
 
-- New boundary delimitation or admin level restructuring
-- Significant geometry changes
-- P-code reassignment
+##### Major Version
 
-A **minor version** MUST be used for corrections that do not affect boundary definitions or p-codes, including:
+A major version MUST be assigned when the update introduces changes that may break existing joins, scripts, dashboards, or maps — i.e. downstream consumers cannot simply auto-refresh. The following changes MUST trigger a major version:
 
-- Attribute corrections or name spelling fixes
-- Metadata updates
-- Small geometry corrections (e.g. snapping, topology fixes)
+- Boundary geometry has been redrawn, merged, or split (new delimitations or realignments)
+- A new administrative level has been introduced, or existing levels have been reclassified
+- The number of records has changed (administrative units added or removed)
+- P-codes have been significantly reassigned or renumbered across most units
+- Administrative unit names have been significantly renamed or updated
+- Attribute schema has changed (fields added, removed, or renamed)
+
+##### Minor Version
+
+A minor version MUST be assigned for corrections that do not affect boundary definitions, record counts, or the coding structure, and that allow downstream systems to auto-refresh without disruption. The following changes MUST trigger a minor version:
+
+- Minor topology fixes (e.g. healing overlaps, removing slivers)
+- Small-scale coordinate corrections (e.g. coastline adjustments, capital point locations)
+- Adding or updating a small number of supplementary features (e.g. admin centroids, capital points, admin lines)
+- Populating missing attribute values
+- Correcting spelling or formatting typos in attribute values
+- Adding or correcting a small number of P-codes that do not affect existing downstream systems
 
 > **Note:** Some older datasets use `cod_version` (e.g. `V_01`) instead of `version`. This is a legacy variant and SHOULD be updated to `version` when datasets are revised.
 
