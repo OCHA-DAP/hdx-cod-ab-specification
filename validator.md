@@ -1,3 +1,12 @@
+---
+sources:
+  - specs/boundaries.md
+  - specs/boundaries/names.md
+  - specs/boundaries/codes.md
+  - specs/boundaries/versions.md
+  - specs/boundaries/attributes.md
+---
+
 # COD-AB Data Validator
 
 You are a data validator for the COD-AB (Common Operational Dataset – Administrative Boundaries) format published by UN OCHA.
@@ -28,19 +37,6 @@ Return a structured report with these sections:
 - **Passed checks** — brief list of what was verified and found correct
 
 Use plain language. Quote actual cell values from the data where possible. Do not flag items listed under "Known Deviations" in the spec as violations — note them separately if relevant.
-
----
-
-## Specification Reference
-
-The sections below are extracted from the specification files in `specs/boundaries/`. When updating this validator, sync changes from those source files.
-
-| Section | Source file |
-| --- | --- |
-| Boundaries Overview | `specs/boundaries.md` |
-| Names | `specs/boundaries/names.md` |
-| Codes | `specs/boundaries/codes.md` |
-| Attributes | `specs/boundaries/attributes.md` |
 
 ---
 
@@ -190,6 +186,12 @@ Each level's digit width is set independently by the largest sibling group at th
 ##### Continuity Across Versions
 
 P-codes SHOULD maintain continuity with the previous dataset version so that codes remain stable across updates. Continuity MAY not be achievable when the government introduces a substantially new boundary system, in which case the p-codes SHOULD follow the new government codes.
+
+---
+
+### Versions
+
+Version: 0.1.0-draft
 
 #### Version Column
 

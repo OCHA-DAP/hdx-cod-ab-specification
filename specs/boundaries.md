@@ -1,6 +1,9 @@
-# COD-AB Specification
+---
+version: 0.1.0-draft
+referenced_by: validator.md
+---
 
-Version: 0.1.0-draft
+# COD-AB Specification
 
 ## Overview
 

@@ -1,6 +1,9 @@
-# Names
+---
+version: 0.1.0-draft
+referenced_by: validator.md
+---
 
-Version: 0.1.0-draft
+# Names
 
 ## Name Columns
 

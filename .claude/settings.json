@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(jq -r '.tool_input.file_path // .tool_response.filePath'); case \"$f\" in */specs/boundaries/*.md|*/specs/boundaries.md|*/specs/metadata.md) echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"Spec file updated — remember to sync the corresponding section in validator.md\"}}' ;; esac"
+          }
+        ]
+      }
+    ]
+  }
+}
