@@ -20,7 +20,18 @@ P-codes SHOULD be derived from official government codes where they exist. Gover
 
 ### Fallback When No Government Codes Exist
 
-When no official government coding system exists, units SHOULD be sorted alphanumerically by name and assigned sequential numbers. The numeric portion SHOULD use the minimum number of digits required to represent all units at that level, with zero-padding applied consistently. For example, if a level has 4 units, single digits are sufficient (`UG1`–`UG4`); if a level has 10 or more units, two digits are required (`SS01`–`SS10`).
+When no official government coding system exists, units SHOULD be sorted alphanumerically by name and assigned sequential numbers. The digit width is determined independently for each admin level within a country: the numeric portion MUST use the minimum number of digits required to represent the largest number of units found within any single parent unit at that level, with zero-padding applied consistently across all codes at that level.
+
+For example, Uganda (`UG`) has 4 administrative regions at admin 1, and the maximum number of child units per parent decreases as units become more granular:
+
+| Admin level | Unit type    | Max units per parent | Digit width | Example codes                           |
+| ----------- | ------------ | -------------------- | ----------- | --------------------------------------- |
+| Admin 1     | Regions      | 4                    | 1           | `UG1`, `UG2`, `UG3`, `UG4`              |
+| Admin 2     | Districts    | 40                   | 2           | `UG101`, `UG102`, … `UG440`             |
+| Admin 3     | Sub-counties | 20                   | 2           | `UG10101`, `UG10102`, … `UG44020`       |
+| Admin 4     | Parishes     | 15                   | 2           | `UG1010101`, `UG1010102`, … `UG4402015` |
+
+Each level's digit width is set independently by the largest sibling group at that level, not the total count across all parents. Admin 3 and admin 4 both use two digits here because no parent at either level contains more than 99 child units.
 
 ### Continuity Across Versions
 
@@ -28,11 +39,25 @@ P-codes SHOULD maintain continuity with the previous dataset version so that cod
 
 ## Version Column
 
-One of the following MUST be present:
+| Column    | Type   | Notes                                  |
+| --------- | ------ | -------------------------------------- |
+| `version` | string | Version string, e.g. `v01` or `v02.01` |
 
-| Column        | Type   | Notes                                  |
-| ------------- | ------ | -------------------------------------- |
-| `version`     | string | Version string, e.g. `v01` (preferred) |
-| `cod_version` | string | Legacy version string, e.g. `V_01`     |
+`version` MUST be present in all datasets. The version string follows one of two formats depending on the nature of the change:
 
-The preferred column name is `version`. The `cod_version` column is a legacy variant present in some older datasets. New datasets MUST use `version`.
+- **Major version** (`v{NN}`): used when the change status is major (e.g. `v03`).
+- **Minor version** (`v{NN}.{NN}`): used when the change status is minor (e.g. `v02.01`).
+
+A **major version** MUST be used when the change affects the boundaries themselves or the coding structure, including:
+
+- New boundary delimitation or admin level restructuring
+- Significant geometry changes
+- P-code reassignment
+
+A **minor version** MUST be used for corrections that do not affect boundary definitions or p-codes, including:
+
+- Attribute corrections or name spelling fixes
+- Metadata updates
+- Small geometry corrections (e.g. snapping, topology fixes)
+
+> **Note:** Some older datasets use `cod_version` (e.g. `V_01`) instead of `version`. This is a legacy variant and SHOULD be updated to `version` when datasets are revised.

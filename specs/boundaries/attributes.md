@@ -4,14 +4,12 @@ Version: 0.1.0-draft
 
 ## Date Columns
 
-| Column     | Type                    | Notes                                                                 |
-| ---------- | ----------------------- | --------------------------------------------------------------------- |
-| `valid_on` | timestamp with timezone | When this version of the data was last updated                        |
-| `valid_to` | timestamp               | When this version was superseded; null if this is the current version |
+| Column     | Type | Notes                                                                 |
+| ---------- | ---- | --------------------------------------------------------------------- |
+| `valid_on` | date | When this version of the data was last updated                        |
+| `valid_to` | date | When this version was superseded; null if this is the current version |
 
-All rows in a file SHOULD share the same `valid_on` and `valid_to` values (dates are constant per layer). `valid_on` MUST be non-null. `valid_to` MUST be null for the current (latest) version of a dataset and non-null for retired versions.
-
-> **Note:** `valid_to` has inconsistent timezone handling in existing data (some files store it as timestamp with timezone, others as timestamp without). New data SHOULD use timestamp with timezone consistently.
+All rows in a file MUST share the same `valid_on` and `valid_to` values (dates are constant per layer). `valid_on` MUST be non-null. `valid_to` MUST be null for the current (latest) version of a dataset and non-null for retired versions.
 
 ## Computed Columns
 
@@ -20,6 +18,8 @@ All rows in a file SHOULD share the same `valid_on` and `valid_to` values (dates
 | `area_sqkm`  | double | Area of the polygon in square kilometres                      |
 | `center_lat` | double | Latitude of a representative point guaranteed within polygon  |
 | `center_lon` | double | Longitude of a representative point guaranteed within polygon |
+
+These columns are added during the publishing pipeline and are not required in candidate datasets submitted for validation. Validators MUST NOT raise errors or warnings for absent computed columns.
 
 These values are computed from the geometry. `area_sqkm` is computed in an equal-area projection (EPSG:6933). `center_lat` and `center_lon` are geographic coordinates (EPSG:4326) of a point guaranteed to be within the polygon.
 
