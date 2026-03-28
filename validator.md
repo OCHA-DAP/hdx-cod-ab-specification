@@ -162,11 +162,15 @@ For each level L (0 ≤ L ≤ N):
 
 P-codes (place codes) are alphanumeric strings identifying administrative units. They are semantic identifiers optimised for human readability: the country code and hierarchical structure are visible in the code itself. Each administrative unit MUST have exactly one P-code. P-codes MUST be unique within their administrative level. P-codes MUST be hierarchically nested: `adm{L}_pcode` MUST start with `adm{L-1}_pcode` for all L > 0. P-codes MUST be alphanumeric only (letters and digits, no spaces or special characters).
 
-Because P-codes encode geographic hierarchy, they are not designed as globally stable machine identifiers: a P-code is only guaranteed unique within a given dataset version. Global stability requires an opaque identifier assigned once and never changed regardless of boundary changes or P-code resets — for example, a UUID (`7f3a9b2c-4d5e-4f6a-8b9c-0d1e2f3a4b5c`) or a centrally-issued integer (`42817`). Such an identifier is not a P-code.
+P-codes MUST be stored and exchanged without delimiters. Delimited forms such as `SS.01.01` or `SS-01-01` MUST NOT appear in data columns. Delimiters may be introduced by a presentation layer for readability but cannot be reliably reversed without out-of-band knowledge of each country's digit-width conventions, which vary by country and level.
 
-Until global identifiers are available, a unique composite key MAY be formed by appending the dataset `version` directly to the P-code. Because P-codes are alphanumeric and always end in a digit, and version strings always begin with `v`, the boundary between the two is unambiguous. For example, `CO05001v02` uniquely identifies Medellín in version `v02` of the Colombia dataset. This composite will not collide across versions, but the same administrative unit will have a different composite key in each version, so it cannot serve as a persistent reference over time.
+The admin 0 p-code (`adm0_pcode`) SHOULD equal the country's [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) code (e.g., `AF` for Afghanistan). Alpha-2 is preferred because the country code prefixes all sub-national codes, so a shorter prefix keeps the full hierarchy compact. Some older datasets use [ISO 3166-1 alpha-3](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3) instead (e.g., `BDI` for Burundi); validators MUST accept this but SHOULD warn about it.
 
-The admin 0 p-code (`adm0_pcode`) SHOULD equal the country's [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) code (e.g., `AF` for Afghanistan). Some older datasets use the [ISO 3166-1 alpha-3](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3) code instead (e.g., `BDI` for Burundi); this is a legacy variant that validators MUST accept but SHOULD warn about.
+##### Global identifiers
+
+P-codes are only guaranteed unique within a given dataset version; they are not globally stable machine identifiers. Admin boundaries change frequently due to elections, conflicts, and administrative reform, so cross-version stability requires an opaque identifier outside the scope of this specification.
+
+Until global identifiers are available, a composite key MAY be formed by appending `version` to the P-code (e.g. `CO05001v02`). The trailing digit and leading `v` make the boundary unambiguous. It will not collide across versions but cannot serve as a persistent reference, since the same unit gets a different composite in each version.
 
 ##### Relationship to Government Codes
 
