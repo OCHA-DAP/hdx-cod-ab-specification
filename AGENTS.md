@@ -4,14 +4,26 @@ This file provides guidance to AI Agents when working with code in this reposito
 
 ## Repository Purpose
 
-This is a **specification repository** for the COD-AB (Common Operational Dataset – Administrative Boundaries) format published by UN OCHA. It contains Markdown specifications, JSON schemas (in `schemas/`), and example data (in `examples/`). There is no build system, test suite, or application code.
+This is a **specification repository** for the COD-AB (Common Operational Dataset – Administrative Boundaries) format published by UN OCHA. It contains Markdown specifications and example data (in `examples/`). There is no build system, test suite, or application code.
 
 ## Structure
 
 - `specs/boundaries.md` — Main specification for admin boundary file layout, column schemas, naming conventions, CRS, and known deviations
 - `specs/metadata.md` — Specification for the metadata registry table schema
-- `schemas/` — JSON schemas (currently empty, to be populated)
-- `examples/` — Example datasets (currently empty, to be populated)
+- `examples/` — Example datasets
+- `scripts/` — Validation scripts callable by AI agents (see `scripts/index.json` for the manifest)
+
+## Validation Scripts
+
+When a user asks you to validate a COD-AB file, check `scripts/index.json` for available scripts and run them with the Bash tool. Each script accepts a file path and returns JSON to stdout.
+
+Example:
+
+```bash
+uv run scripts/check_versions.py path/to/file.gpkg
+```
+
+Scripts exit 0 on pass, 1 on violations. Parse the JSON output to report results to the user.
 
 ## Editing Guidelines
 

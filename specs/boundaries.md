@@ -21,6 +21,8 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "S
 
 COD-ABs are the authoritative administrative boundary datasets for humanitarian response. They are maintained on a country-by-country basis, versioned over time, and cover up to six administrative levels (Admin 0–5). Each country may have one or more versioned datasets.
 
+A valid COD-AB MUST include at least one subnational layer (Admin 1 or below). A dataset containing only an Admin 0 layer is not a valid COD-AB.
+
 ## Admin Boundary Layers (`{iso3}_admin{N}`)
 
 Each admin boundary file represents one administrative level for one country version. Every row in the file is a single administrative unit (polygon) at that level.

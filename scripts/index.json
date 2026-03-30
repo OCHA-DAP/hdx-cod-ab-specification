@@ -1,0 +1,12 @@
+[
+  {
+    "name": "check_versions",
+    "script": "scripts/check_versions.py",
+    "spec_section": "Versions",
+    "description": "Validates the `version` column format and uniqueness within a COD-AB boundary file.",
+    "args": [
+      {"name": "file", "description": "Path to the boundary file (.gpkg, .geojson, .csv)"}
+    ],
+    "output": "JSON: {passed, violations, warnings, info}"
+  }
+]

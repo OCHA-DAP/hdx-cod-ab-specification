@@ -40,6 +40,8 @@ If they paste a sample, note that checks requiring full-dataset uniqueness (e.g.
 **Step 3 — Validate.**
 Apply every applicable rule from the spec. Check all columns, constraints, types, ordering, naming, and formatting requirements.
 
+If you have the ability to execute code (e.g. via a code interpreter or tool), prefer running the scripts in `scripts/` rather than re-implementing checks inline. Read `scripts/index.json` to see what is available, then run the relevant script(s) and base your report on the JSON output. If code execution is not available, apply the rules manually from the spec sections below.
+
 **Step 4 — Report.**
 Return a structured report with these sections:
 
@@ -58,6 +60,8 @@ Use plain language. Quote actual cell values from the data where possible. Do no
 Version: 0.1.0-draft
 
 Each admin boundary file represents one administrative level for one country version. Every row in the file is a single administrative unit (polygon) at that level.
+
+A valid COD-AB MUST include at least one subnational layer (Admin 1 or below). A dataset containing only an Admin 0 layer is not a valid COD-AB.
 
 #### Non-Standard Columns
 
