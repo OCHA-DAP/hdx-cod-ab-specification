@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { PreviewData } from "$lib/db/loader";
-  import type { Map as MaplibreMap, MapSourceDataEvent } from "maplibre-gl";
+  import type { Map as MaplibreMap } from "maplibre-gl";
   import "maplibre-gl/dist/maplibre-gl.css";
   import { onDestroy, onMount } from "svelte";
 
@@ -8,9 +8,12 @@
 
   let container: HTMLDivElement | undefined;
   let map: MaplibreMap | undefined;
+  let blobUrl: string | undefined;
 
   onMount(async () => {
     if (!container) return;
+
+    blobUrl = URL.createObjectURL(preview.blob);
 
     // Dynamic import keeps maplibre-gl's bundled internals out of Svelte 5's
     // compilation scope, avoiding a $$props variable name conflict.
@@ -37,16 +40,7 @@
     map.on("load", () => {
       if (!map) return;
 
-      map.addSource("preview", { type: "geojson", data: preview.url });
-
-      // Revoke the blob URL once MapLibre has fetched and tiled the data.
-      const onSourceData = (e: MapSourceDataEvent) => {
-        if (e.sourceId === "preview" && map?.isSourceLoaded("preview")) {
-          URL.revokeObjectURL(preview.url);
-          map.off("sourcedata", onSourceData);
-        }
-      };
-      map.on("sourcedata", onSourceData);
+      map.addSource("preview", { type: "geojson", data: blobUrl! });
 
       map.addLayer({
         id: "preview-fill",
@@ -105,6 +99,7 @@
 
   onDestroy(() => {
     map?.remove();
+    if (blobUrl) URL.revokeObjectURL(blobUrl);
   });
 </script>
 

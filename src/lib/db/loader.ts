@@ -88,8 +88,8 @@ export async function loadSpatialLayer(
 // ── Map preview helpers ───────────────────────────────────────────────────────
 
 export interface PreviewData {
-  /** Blob URL pointing to a GeoJSON FeatureCollection. Revoke after MapLibre loads it. */
-  url: string;
+  /** GeoJSON FeatureCollection blob. MapPreview creates/revokes its own URL each mount. */
+  blob: Blob;
   /** [minLng, minLat, maxLng, maxLat] in WGS-84, or null if unavailable. */
   bounds: [number, number, number, number] | null;
 }
@@ -165,9 +165,8 @@ export async function buildPreviewData(
 
     const geojson = `{"type":"FeatureCollection","features":[${parts.join(",")}]}`;
     const blob = new Blob([geojson], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
 
-    return { url, bounds };
+    return { blob, bounds };
   } catch {
     return null;
   }
