@@ -23,7 +23,13 @@ Example:
 uv run scripts/check_versions.py path/to/file.gpkg
 ```
 
-Scripts exit 0 on pass, 1 on violations. Parse the JSON output to report results to the user.
+Scripts exit 0 on pass, 1 on violations. After running one or more validation scripts, always present results as a formatted summary report using a table where:
+
+- Rows are files
+- Columns are validation checks, using clean human-readable names (e.g. `check_versions` → "Version")
+- Cells show Pass/Fail
+
+When validating multiple countries (or multiple version groups within a country), use a `###` heading per group (country name and folder) and render one table per group. Follow each table with any violations (MUST rules broken), warnings (SHOULD rules broken), or info messages for that group.
 
 ## Editing Guidelines
 

@@ -43,13 +43,13 @@ Apply every applicable rule from the spec. Check all columns, constraints, types
 If you have the ability to execute code (e.g. via a code interpreter or tool), prefer running the scripts in `scripts/` rather than re-implementing checks inline. Read `scripts/index.json` to see what is available, then run the relevant script(s) and base your report on the JSON output. If code execution is not available, apply the rules manually from the spec sections below.
 
 **Step 4 — Report.**
-Return a structured report with these sections:
+Return a structured report. Start with a summary table where rows are files and columns are individual checks, using clean human-readable names (e.g. `check_versions` → "Version"). Each cell shows Pass or Fail.
 
-- **Summary** — one-sentence verdict (e.g. "3 violations, 2 warnings")
+If any checks failed, follow the table with detail sections:
+
 - **Violations** — MUST/MUST NOT rules that are broken; number each item, name the column, state the rule, give a concrete example from the data
 - **Warnings** — SHOULD/SHOULD NOT rules not followed; same format
 - **Non-standard columns** — columns present but not in the spec (permitted, but note them)
-- **Passed checks** — brief list of what was verified and found correct
 
 Use plain language. Quote actual cell values from the data where possible. Do not flag items listed under "Known Deviations" in the spec as violations — note them separately if relevant.
 

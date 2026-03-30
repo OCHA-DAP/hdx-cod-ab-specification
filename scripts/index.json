@@ -5,7 +5,7 @@
     "spec_section": "Versions",
     "description": "Validates the `version` column format and uniqueness within a COD-AB boundary file.",
     "args": [
-      {"name": "file", "description": "Path to the boundary file (.gpkg, .geojson, .csv)"}
+      {"name": "file", "description": "Path to the boundary file (any pandas/geopandas-compatible format: .gpkg, .geojson, .csv, .parquet, .xlsx, etc.)"}
     ],
     "output": "JSON: {passed, violations, warnings, info}"
   }

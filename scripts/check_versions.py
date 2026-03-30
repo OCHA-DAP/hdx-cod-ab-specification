@@ -4,7 +4,7 @@ Validate the version column of a COD-AB boundary file.
 Spec: validator.md § Versions
 
 Usage:
-    python scripts/check_versions.py <path/to/file.gpkg|.csv|.geojson>
+    python scripts/check_versions.py <path/to/file>
 
 Output:
     JSON printed to stdout with keys:
