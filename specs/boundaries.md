@@ -6,6 +6,7 @@ sources:
   - specs/boundaries/codes.md
   - specs/boundaries/versions.md
   - specs/boundaries/attributes.md
+  - specs/boundaries/geometry.md
 ---
 
 # COD-AB Specification
