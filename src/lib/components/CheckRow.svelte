@@ -1,14 +1,26 @@
 <script lang="ts">
   import type { Check } from "$lib/checks/types";
   import type { FileResult } from "$lib/runner";
+  import MapPreview from "./MapPreview.svelte";
   import MessageList from "./MessageList.svelte";
 
   let { fileResult, checks }: { fileResult: FileResult; checks: Check[] } =
     $props();
+
+  let mapOpen = $state(false);
 </script>
 
 <div class="file-result">
   <h3 class="filename">{fileResult.fileName}</h3>
+
+  {#if fileResult.preview}
+    <button class="map-toggle" onclick={() => (mapOpen = !mapOpen)}>
+      {mapOpen ? "▼ Hide map" : "▶ Show map"}
+    </button>
+    {#if mapOpen}
+      <MapPreview preview={fileResult.preview} />
+    {/if}
+  {/if}
 
   {#if fileResult.loadError}
     <p class="load-error">Load error: {fileResult.loadError}</p>
@@ -109,5 +121,17 @@
     padding-left: 1rem;
     border-left: 2px solid #e5e7eb;
     margin-left: 0.25rem;
+  }
+  .map-toggle {
+    background: none;
+    border: none;
+    padding: 0;
+    margin-bottom: 0.6rem;
+    font-size: 0.8rem;
+    color: #6b7280;
+    cursor: pointer;
+  }
+  .map-toggle:hover {
+    color: #111;
   }
 </style>

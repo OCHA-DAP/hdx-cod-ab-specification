@@ -1,10 +1,12 @@
 import type { AsyncDuckDB, AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
 import { checks } from "./checks/registry.ts";
 import type { CheckResult } from "./checks/types.ts";
+import type { PreviewData } from "./db/loader.ts";
 import {
-  loadParquet,
-  loadGeoJSON,
+  buildPreviewData,
   listSpatialLayers,
+  loadGeoJSON,
+  loadParquet,
   loadSpatialLayer,
   registerShapefileFiles,
 } from "./db/loader.ts";
@@ -13,21 +15,27 @@ export interface FileResult {
   fileName: string;
   loadError: string | null;
   checks: Record<string, CheckResult>; // keyed by check.name
+  /** Blob URL + bounds for the map preview. Null if no geometry column or spatial ext unavailable. */
+  preview: PreviewData | null;
 }
 
 export interface DatasetResult {
   files: FileResult[];
 }
 
-async function runChecks(
+async function runChecksAndPreview(
   conn: AsyncDuckDBConnection,
   columns: string[],
-): Promise<Record<string, CheckResult>> {
-  const results: Record<string, CheckResult> = {};
+): Promise<{
+  checks: Record<string, CheckResult>;
+  preview: PreviewData | null;
+}> {
+  const checkResults: Record<string, CheckResult> = {};
   for (const check of checks) {
-    results[check.name] = await check.run(conn, columns);
+    checkResults[check.name] = await check.run(conn, columns);
   }
-  return results;
+  const preview = await buildPreviewData(conn);
+  return { checks: checkResults, preview };
 }
 
 const SHP_EXTS = new Set([".shp", ".dbf", ".shx", ".prj", ".cpg"]);
@@ -88,6 +96,7 @@ async function processLayers(
         fileName: filePath,
         loadError: e instanceof Error ? e.message : String(e),
         checks: {},
+        preview: null,
       },
     ];
   }
@@ -98,6 +107,7 @@ async function processLayers(
         fileName: filePath,
         loadError: `No layers found — format may not be supported in this browser.`,
         checks: {},
+        preview: null,
       },
     ];
   }
@@ -108,10 +118,13 @@ async function processLayers(
       fileName: `${filePath}::${layerName}`,
       loadError: null,
       checks: {},
+      preview: null,
     };
     try {
       const { columns } = await loadSpatialLayer(filePath, layerName, conn);
-      fileResult.checks = await runChecks(conn, columns);
+      const outcome = await runChecksAndPreview(conn, columns);
+      fileResult.checks = outcome.checks;
+      fileResult.preview = outcome.preview;
     } catch (e) {
       fileResult.loadError =
         "[load] " + (e instanceof Error ? e.message : String(e));
@@ -146,10 +159,13 @@ export async function runValidation(
         fileName: file.name,
         loadError: null,
         checks: {},
+        preview: null,
       };
       try {
         const { columns } = await loadParquet(file, db, conn);
-        fileResult.checks = await runChecks(conn, columns);
+        const outcome = await runChecksAndPreview(conn, columns);
+        fileResult.checks = outcome.checks;
+        fileResult.preview = outcome.preview;
       } catch (e) {
         fileResult.loadError = e instanceof Error ? e.message : String(e);
       }
@@ -162,10 +178,17 @@ export async function runValidation(
         fileName: file.name,
         loadError: null,
         checks: {},
+        preview: null,
       };
       try {
         const { columns } = await loadGeoJSON(file, db, conn);
-        fileResult.checks = await runChecks(conn, columns);
+        const outcome = await runChecksAndPreview(conn, columns);
+        fileResult.checks = outcome.checks;
+        // loadGeoJSON strips geometry from the data table (properties only), so
+        // buildPreviewData returns null. Use the original file directly instead —
+        // GeoJSON is always WGS-84 so no transform is needed, and the File blob
+        // is already in memory from the upload.
+        fileResult.preview = { url: URL.createObjectURL(file), bounds: null };
       } catch (e) {
         fileResult.loadError = e instanceof Error ? e.message : String(e);
       }
@@ -194,6 +217,7 @@ export async function runValidation(
         fileName: name,
         loadError: e instanceof Error ? e.message : String(e),
         checks: {},
+        preview: null,
       });
       continue;
     }
