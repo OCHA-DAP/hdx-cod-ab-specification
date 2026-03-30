@@ -28,19 +28,15 @@
   const SHP_EXTS = [".shp", ".dbf", ".shx", ".prj", ".cpg"];
 
   let dragging = $state(false);
+  let hasGDB = $state(false);
 
-  function isIncluded(file: File): boolean {
+  function isGDB(file: File): boolean {
     const relPath =
       (file as File & { webkitRelativePath: string }).webkitRelativePath || "";
-    if (/\.gdb\//i.test(relPath)) {
-      // Exclude machine-specific journal/undo files (e.g. "a00000001-Computer.gdbtable")
-      // created by ESRI software. The OS file picker hides these; the drag-drop
-      // FileSystemDirectoryReader API exposes them and they confuse GDAL.
-      const base = file.name.includes(".")
-        ? file.name.slice(0, file.name.lastIndexOf("."))
-        : file.name;
-      return !base.includes("-");
-    }
+    return /\.gdb\//i.test(relPath);
+  }
+
+  function isIncluded(file: File): boolean {
     const name = file.name.toLowerCase();
     return (
       SINGLE_EXTS.some((ext) => name.endsWith(ext)) ||
@@ -56,24 +52,19 @@
   }
 
   function filterAndSort(fileList: File[]): File[] {
-    return fileList.filter(isIncluded).sort((a, b) =>
-      sortKey(a).localeCompare(sortKey(b)),
-    );
+    hasGDB = fileList.some(isGDB);
+    return fileList
+      .filter(isIncluded)
+      .sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
   }
 
-  /** Build a human-readable summary: individual filenames, shapefile stems, and ".gdb/" folder names. */
+  /** Build a human-readable summary: individual filenames and shapefile stems. */
   function summarize(fileList: File[]): string {
-    const gdbs = new Set<string>();
     const shpStems = new Map<string, string>(); // lowercased stem -> display name
     const singles: string[] = [];
     for (const f of fileList) {
       const relPath =
         (f as File & { webkitRelativePath: string }).webkitRelativePath || "";
-      const gdbMatch = relPath.match(/^(.*\.gdb)\//i);
-      if (gdbMatch) {
-        gdbs.add(gdbMatch[1].split("/").pop()! + "/");
-        continue;
-      }
       const lname = f.name.toLowerCase();
       if (SHP_EXTS.some((ext) => lname.endsWith(ext))) {
         const fullPath = relPath || f.name;
@@ -89,11 +80,7 @@
       }
       singles.push(f.name);
     }
-    return [
-      ...singles,
-      ...Array.from(shpStems.values()).sort(),
-      ...Array.from(gdbs).sort(),
-    ].join(", ");
+    return [...singles, ...Array.from(shpStems.values()).sort()].join(", ");
   }
 
   async function readAllEntries(
@@ -144,7 +131,9 @@
       const newBase = basePath ? `${basePath}/${entry.name}` : entry.name;
       const reader = (entry as FileSystemDirectoryEntry).createReader();
       const entries = await readAllEntries(reader);
-      const nested = await Promise.all(entries.map((e) => readEntry(e, newBase)));
+      const nested = await Promise.all(
+        entries.map((e) => readEntry(e, newBase)),
+      );
       return nested.flat();
     }
     return [];
@@ -158,7 +147,7 @@
 
   function handleDragLeave(event: DragEvent) {
     // Only clear dragging when leaving the zone entirely (not entering a child)
-    const zone = (event.currentTarget as HTMLElement);
+    const zone = event.currentTarget as HTMLElement;
     if (!zone.contains(event.relatedTarget as Node)) {
       dragging = false;
     }
@@ -173,7 +162,9 @@
       .map((item) => item.webkitGetAsEntry())
       .filter(Boolean) as FileSystemEntry[];
     try {
-      const allFiles = (await Promise.all(entries.map((e) => readEntry(e)))).flat();
+      const allFiles = (
+        await Promise.all(entries.map((e) => readEntry(e)))
+      ).flat();
       files = filterAndSort(allFiles);
     } catch (e) {
       console.error("Failed to read dropped files:", e);
@@ -184,7 +175,6 @@
     const input = event.target as HTMLInputElement;
     files = filterAndSort(Array.from(input.files ?? []));
   }
-
 </script>
 
 <div
@@ -217,6 +207,12 @@
       <span class="filenames">{summarize(files)}</span>
     </p>
   {/if}
+  {#if hasGDB}
+    <p class="gdb-warning">
+      File Geodatabase (.gdb) is not supported — convert to GeoPackage (.gpkg)
+      using QGIS or GDAL.
+    </p>
+  {/if}
 </div>
 
 <style>
@@ -226,7 +222,9 @@
     border-radius: 8px;
     padding: 2rem 1.5rem;
     text-align: center;
-    transition: border-color 0.15s, background-color 0.15s;
+    transition:
+      border-color 0.15s,
+      background-color 0.15s;
     background: #f9fafb;
   }
   .drop-zone.dragging {
@@ -272,5 +270,14 @@
   .filenames {
     font-family: monospace;
     color: #111;
+  }
+  .gdb-warning {
+    margin: 0.5rem 0 0;
+    font-size: 0.85rem;
+    color: #92400e;
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: 4px;
+    padding: 0.4rem 0.6rem;
   }
 </style>

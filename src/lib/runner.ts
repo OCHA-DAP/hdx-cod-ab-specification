@@ -6,7 +6,6 @@ import {
   loadGeoJSON,
   listSpatialLayers,
   loadSpatialLayer,
-  registerGDBFiles,
   registerShapefileFiles,
 } from "./db/loader.ts";
 
@@ -35,31 +34,20 @@ const SHP_EXTS = new Set([".shp", ".dbf", ".shx", ".prj", ".cpg"]);
 
 /**
  * Groups files by format:
- * - GDB: files inside a .gdb/ directory (detected via webkitRelativePath)
  * - Shapefile: files sharing the same stem and a shapefile extension; only
  *   groups that contain a .shp file are kept (orphaned sidecars become individuals)
  * - Individual: everything else
  */
 function groupFiles(files: File[]): {
-  gdbGroups: Map<string, File[]>;
   shpGroups: Map<string, File[]>; // lowercased stem -> all component files
   individualFiles: File[];
 } {
-  const gdbGroups = new Map<string, File[]>();
   const shpGroups = new Map<string, File[]>();
   const individualFiles: File[] = [];
 
   for (const file of files) {
     const relPath =
       (file as File & { webkitRelativePath: string }).webkitRelativePath || "";
-
-    const gdbMatch = relPath.match(/^(.*\.gdb)\//i);
-    if (gdbMatch) {
-      const gdbPath = gdbMatch[1];
-      if (!gdbGroups.has(gdbPath)) gdbGroups.set(gdbPath, []);
-      gdbGroups.get(gdbPath)!.push(file);
-      continue;
-    }
 
     const fullPath = relPath || file.name;
     const dotIdx = fullPath.lastIndexOf(".");
@@ -90,14 +78,13 @@ function groupFiles(files: File[]): {
     }
   }
 
-  return { gdbGroups, shpGroups, individualFiles };
+  return { shpGroups, individualFiles };
 }
 
 /**
  * Runs all registered checks against each layer sequentially.
  * Supports every format readable by DuckDB's spatial extension (via ST_Read /
- * GDAL) in addition to Parquet and GeoJSON. Multi-file formats (Shapefile,
- * File Geodatabase) are grouped before loading.
+ * GDAL) in addition to Parquet and GeoJSON. Shapefiles are grouped before loading.
  */
 export async function runValidation(
   files: File[],
@@ -105,7 +92,7 @@ export async function runValidation(
   conn: AsyncDuckDBConnection,
 ): Promise<DatasetResult> {
   const results: FileResult[] = [];
-  const { gdbGroups, shpGroups, individualFiles } = groupFiles(files);
+  const { shpGroups, individualFiles } = groupFiles(files);
 
   // ── Individual files ──────────────────────────────────────────────────────
   // Parquet and GeoJSON are loaded natively; everything else goes through
@@ -217,49 +204,6 @@ export async function runValidation(
       };
       try {
         const { columns } = await loadSpatialLayer(shpPath, layerName, conn);
-        fileResult.checks = await runChecks(conn, columns);
-      } catch (e) {
-        fileResult.loadError =
-          "[load] " + (e instanceof Error ? e.message : String(e));
-      }
-      results.push(fileResult);
-    }
-  }
-
-  // ── ESRI File Geodatabases ────────────────────────────────────────────────
-
-  for (const [gdbPath, gdbFiles] of gdbGroups) {
-    let layers: string[];
-    try {
-      await registerGDBFiles(gdbFiles, db);
-      layers = await listSpatialLayers(gdbPath, conn);
-    } catch (e) {
-      results.push({
-        fileName: gdbPath,
-        loadError: e instanceof Error ? e.message : String(e),
-        checks: {},
-      });
-      continue;
-    }
-
-    if (layers.length === 0) {
-      results.push({
-        fileName: gdbPath,
-        loadError:
-          "File Geodatabase (.gdb) is not supported in this browser — convert to GeoPackage (.gpkg) using QGIS or ogr2ogr.",
-        checks: {},
-      });
-      continue;
-    }
-
-    for (const layerName of layers) {
-      const fileResult: FileResult = {
-        fileName: `${gdbPath}::${layerName}`,
-        loadError: null,
-        checks: {},
-      };
-      try {
-        const { columns } = await loadSpatialLayer(gdbPath, layerName, conn);
         fileResult.checks = await runChecks(conn, columns);
       } catch (e) {
         fileResult.loadError =

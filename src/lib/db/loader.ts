@@ -55,7 +55,7 @@ export async function loadGeoJSON(
 
 // ── Generic spatial (GDAL / ST_Read) ─────────────────────────────────────────
 // Works for any format supported by DuckDB's spatial extension: GeoPackage,
-// Shapefile, File Geodatabase, FlatGeobuf, KML, GML, GPX, SpatiaLite, etc.
+// Shapefile, FlatGeobuf, KML, GML, GPX, SpatiaLite, etc.
 // The file(s) must already be registered in DuckDB's virtual FS before calling.
 
 export async function listSpatialLayers(
@@ -85,26 +85,6 @@ export async function loadSpatialLayer(
 // ── Multi-file registration helpers ──────────────────────────────────────────
 // These formats require multiple component files to be loaded into DuckDB's
 // virtual FS before ST_Read can open them.
-
-/** Registers all files inside a .gdb directory and returns the .gdb folder path. */
-export async function registerGDBFiles(
-  files: File[],
-  db: AsyncDuckDB,
-): Promise<string> {
-  let gdbPath = "";
-  for (const file of files) {
-    const relPath =
-      (file as File & { webkitRelativePath: string }).webkitRelativePath ||
-      file.name;
-    if (!gdbPath) {
-      const m = relPath.match(/^(.*\.gdb)\//i);
-      if (m) gdbPath = m[1];
-    }
-    const buffer = new Uint8Array(await file.arrayBuffer());
-    await db.registerFileBuffer(relPath, buffer);
-  }
-  return gdbPath;
-}
 
 /** Registers all shapefile component files and returns the .shp file path. */
 export async function registerShapefileFiles(
