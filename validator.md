@@ -38,20 +38,69 @@ print(df.to_csv(index=False))
 If they paste a sample, note that checks requiring full-dataset uniqueness (e.g. p-code duplicates) can only be confirmed on the complete file.
 
 **Step 3 — Validate.**
-Apply every applicable rule from the spec. Check all columns, constraints, types, ordering, naming, and formatting requirements.
 
-If you have the ability to execute code (e.g. via a code interpreter or tool), prefer running the scripts in `scripts/` rather than re-implementing checks inline. Read `scripts/index.json` to see what is available, then run the relevant script(s) and base your report on the JSON output. If code execution is not available, apply the rules manually from the spec sections below.
+If you have the ability to execute code, use the validation scripts rather than re-implementing checks inline.
+
+1. Read `scripts/index.json` to see what scripts are available and their `applies_to` field. The controlled vocabulary is:
+   - `"admin"` — admin boundary polygon layers (admin0–5); the user must confirm which files are admin layers, as geometry type alone cannot distinguish them
+   - `"lines"` — line geometry layers; auto-detectable from geometry type
+   - `"points"` — point geometry layers; auto-detectable from geometry type
+   - `"all"` — every layer regardless of type
+
+   Only run a script against files that match its `applies_to` target.
+
+2. **For a single file**, run the script directly:
+
+   ```bash
+   uv run scripts/check_versions.py path/to/file.gpkg
+   ```
+
+3. **For all files in `boundaries/`**, use the report script, which reads `scripts/index.json` dynamically, auto-detects layer types by filename, runs applicable checks, and prints a Markdown report:
+
+   ```bash
+   uv run scripts/report.py                                        # all checks
+   uv run scripts/report.py --checks check_pcode_hierarchy        # one check
+   uv run scripts/report.py boundaries/cod_ab_lbn_v02             # single folder
+   ```
+
+4. **For multiple individual files**, import the `check()` functions directly — subprocess startup is ~300ms per call and becomes the bottleneck at scale:
+
+   ```python
+   import sys
+   sys.path.insert(0, "scripts")
+   import check_versions, check_dates
+
+   result = check_versions.check(str(path))
+   ```
+
+   Scripts return `{"passed": bool, "violations": [...], "warnings": [...], "info": [...]}`.
+
+If code execution is not available, apply the rules manually from the spec sections below.
 
 **Step 4 — Report.**
-Return a structured report. Start with a summary table where rows are files and columns are individual checks, using clean human-readable names (e.g. `check_versions` → "Version"). Each cell shows Pass or Fail.
 
-If any checks failed, follow the table with detail sections:
+Format results as follows:
 
-- **Violations** — MUST/MUST NOT rules that are broken; number each item, name the column, state the rule, give a concrete example from the data
-- **Warnings** — SHOULD/SHOULD NOT rules not followed; same format
-- **Non-standard columns** — columns present but not in the spec (permitted, but note them)
+- **If all checks pass for a group:** show a single `###` heading with "All checks passed" — no table, no messages.
+
+- **If any check fails in a group:** use a `###` heading (country name and folder) and render a table where rows are files and columns are validation checks, using clean human-readable names (e.g. `check_versions` → "Version"). Each cell shows Pass or Fail.
+
+  Follow the table with only the failing details — violations (MUST rules broken), warnings (SHOULD rules broken), and info messages — per layer, clearly labeled.
+
+- **Always end with an issue-grouped summary table** with columns: Issue | Severity | Folders affected | Files affected. Include both violations and warnings. Group by issue type and count how many folders and files are affected. Add a brief sentence interpreting the dominant pattern.
 
 Use plain language. Quote actual cell values from the data where possible. Do not flag items listed under "Known Deviations" in the spec as violations — note them separately if relevant.
+
+---
+
+## Specification Reference
+
+The sections below are the authoritative spec for the COD-AB format. Use them as context when:
+
+- Answering questions about the format, column schemas, naming conventions, or rules
+- Explaining why a particular value is valid or invalid
+- Providing guidance on how to produce or correct a dataset
+- Manually applying checks when code execution is not available
 
 ---
 
