@@ -1,42 +1,29 @@
-# sv
+# hdx-cod-ab-specification
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+Normative specification for the **COD-AB (Common Operational Dataset – Administrative Boundaries)** format published by UN OCHA. It defines the required file structure, column schemas, naming conventions, coordinate reference systems, and metadata registry layout for admin boundary datasets on HDX.
 
-## Creating a project
+## Specification files
 
-If you're seeing this, you've probably already done this step. Congrats!
+- [specs/boundaries.md](specs/boundaries.md) — Admin boundary file overview, column order, and known deviations
+- [specs/boundaries/names.md](specs/boundaries/names.md) — Name and language column schema
+- [specs/boundaries/codes.md](specs/boundaries/codes.md) — P-code and version column schema
+- [specs/boundaries/attributes.md](specs/boundaries/attributes.md) — Date, computed, and identifier column schema
+- [specs/file-structure.md](specs/file-structure.md) — Directory and file naming conventions, CRS requirements
+- [specs/metadata.md](specs/metadata.md) — Metadata registry table schema
 
-```sh
-# create a new project
-npx sv create my-app
-```
+## Validating a dataset with an LLM
 
-To recreate this project with the same configuration:
+This repository includes an [`llms.txt`](llms.txt) file — a machine-readable index following the [llms.txt convention](https://llmstxt.org/) that points LLMs to the relevant spec content. It also includes a self-contained validator prompt.
 
-```sh
-# recreate this project
-npx sv@0.13.0 create --template minimal --types ts --install npm web
-```
+To interactively validate a COD-AB dataset:
 
-## Developing
+1. Open a conversation with an LLM that supports URL fetching (e.g. Claude, ChatGPT with browsing).
+2. Paste this message into the chat:
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+   ```
+   Please fetch https://raw.githubusercontent.com/OCHA-DAP/hdx-cod-ab-specification/main/validator.md and follow the instructions there to validate my COD-AB dataset.
+   ```
 
-```sh
-npm run dev
+3. Follow the guided prompts to check your dataset against the spec.
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
-
-```sh
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+Alternatively, open [`validator.md`](validator.md) and paste its contents directly into a chat session — no URL fetching needed.
