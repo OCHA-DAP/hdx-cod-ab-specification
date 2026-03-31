@@ -1,29 +1,40 @@
-# hdx-cod-ab-specification
+# COD-AB Validator
 
-Normative specification for the **COD-AB (Common Operational Dataset – Administrative Boundaries)** format published by UN OCHA. It defines the required file structure, column schemas, naming conventions, coordinate reference systems, and metadata registry layout for admin boundary datasets on HDX.
+Validate UN OCHA administrative boundary files against the COD-AB specification — directly in your browser. No account, no upload, no server. Your files stay on your machine.
 
-## Specification files
+## How to use
 
-- [specs/boundaries.md](specs/boundaries.md) — Admin boundary file overview, column order, and known deviations
-- [specs/boundaries/names.md](specs/boundaries/names.md) — Name and language column schema
-- [specs/boundaries/codes.md](specs/boundaries/codes.md) — P-code and version column schema
-- [specs/boundaries/attributes.md](specs/boundaries/attributes.md) — Date, computed, and identifier column schema
-- [specs/file-structure.md](specs/file-structure.md) — Directory and file naming conventions, CRS requirements
-- [specs/metadata.md](specs/metadata.md) — Metadata registry table schema
+1. Open the tool in your browser
+2. Drop one or more boundary files onto the upload area
+3. Click **Validate**
+4. Review results per layer — each check shows passes, warnings, and violations with explanations
 
-## Validating a dataset with an LLM
+## Supported file formats
 
-This repository includes an [`llms.txt`](llms.txt) file — a machine-readable index following the [llms.txt convention](https://llmstxt.org/) that points LLMs to the relevant spec content. It also includes a self-contained validator prompt.
+- Shapefiles (drop all sidecar files together: `.shp`, `.dbf`, `.shx`, `.prj`, `.cpg`)
+- GeoPackage (`.gpkg`) — multi-layer files produce one result per layer
+- GeoJSON
+- FlatGeobuf
+- Parquet / GeoParquet
+- KML
+- ZIP archives
 
-To interactively validate a COD-AB dataset:
+## What gets checked
 
-1. Open a conversation with an LLM that supports URL fetching (e.g. Claude, ChatGPT with browsing).
-2. Paste this message into the chat:
+| Check | What it looks for |
+| --- | --- |
+| **Geometry** | Null or empty geometries; invalid geometries (self-intersections, unclosed rings); coordinates outside WGS 84 bounds |
+| **Polygon type** | All features must be polygons or multipolygons (no points or lines) |
+| **Topology** | Overlapping polygons; gaps (slivers) between adjacent polygons |
+| **Version** | `version` column present; consistent across all rows; correct format (`v01`, `v02.01`, etc.) |
+| **Dates** | `valid_on` and `valid_to` columns present and consistent; flags retired datasets |
 
-   ```
-   Please fetch https://raw.githubusercontent.com/OCHA-DAP/hdx-cod-ab-specification/main/validator.md and follow the instructions there to validate my COD-AB dataset.
-   ```
+Results include an interactive map preview with overlapping areas and gaps highlighted.
 
-3. Follow the guided prompts to check your dataset against the spec.
+## Validating with an LLM
 
-Alternatively, open [`validator.md`](validator.md) and paste its contents directly into a chat session — no URL fetching needed.
+The tool includes a **Copy prompt** button that copies a self-contained validation prompt to your clipboard. Paste it into Claude, ChatGPT, or any other LLM to get guided feedback on your dataset.
+
+## Specification
+
+Click **View specification** in the app to browse the full COD-AB boundary spec, including column schemas for names, codes, attributes, geometry, and versioning.

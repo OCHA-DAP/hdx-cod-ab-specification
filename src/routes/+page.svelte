@@ -44,6 +44,20 @@
   let runError = $state<string | null>(null);
   let showSpec = $state(false);
   let activeTab = $state('overview');
+  let copyState = $state<'idle' | 'copying' | 'copied'>('idle');
+
+  async function copyPrompt() {
+    copyState = 'copying';
+    try {
+      const res = await fetch('/prompt');
+      const text = await res.text();
+      await navigator.clipboard.writeText(text);
+      copyState = 'copied';
+      setTimeout(() => (copyState = 'idle'), 2000);
+    } catch {
+      copyState = 'idle';
+    }
+  }
 
   const validTabIds = new Set(specTabs.map((t) => t.id));
 
@@ -108,8 +122,18 @@
   <header>
     <h1>COD-AB Data Validator</h1>
     <p class="subtitle">Validate administrative boundary files against the COD-AB specification.</p>
+    <p class="llm-hint">
+      To validate with an LLM: <button
+        class="copy-prompt-button"
+        onclick={copyPrompt}
+        disabled={copyState !== 'idle'}
+      >
+        {copyState === 'copied' ? 'Copied!' : copyState === 'copying' ? 'Copying…' : 'Copy prompt'}
+      </button> then paste it into your LLM of choice.
+    </p>
     <button
       class="spec-button"
+      class:active={showSpec}
       onclick={() => {
         showSpec = !showSpec;
         history.pushState(null, '', buildHash(showSpec, activeTab) || window.location.pathname);
@@ -188,6 +212,33 @@
     color: #6b7280;
     font-size: 0.95rem;
   }
+  .llm-hint {
+    margin: 0.35rem 0 0;
+    color: #6b7280;
+    font-size: 0.85rem;
+  }
+
+  .copy-prompt-button {
+    display: inline;
+    padding: 0;
+    background: none;
+    border: none;
+    font-size: inherit;
+    color: #374151;
+    cursor: pointer;
+    font-family: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-color: #9ca3af;
+  }
+  .copy-prompt-button:hover:not(:disabled) {
+    color: #111;
+    text-decoration-color: #374151;
+  }
+  .copy-prompt-button:disabled {
+    cursor: default;
+    text-decoration: none;
+  }
   .status {
     color: #6b7280;
     font-size: 0.9rem;
@@ -219,15 +270,30 @@
   .spec-button {
     margin-top: 0.5rem;
     padding: 0.25rem 0.75rem;
-    background: none;
-    border: 1px solid #d1d5db;
-    border-radius: 4px;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
     font-size: 0.85rem;
     color: #374151;
     cursor: pointer;
+    font-family: inherit;
+    transition:
+      background 0.1s,
+      color 0.1s,
+      border-color 0.1s;
   }
   .spec-button:hover {
-    background: #f3f4f6;
+    background: #e5e7eb;
+  }
+  .spec-button.active {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+    color: white;
+    font-weight: 600;
+  }
+  .spec-button.active:hover {
+    background: #1e40af;
+    border-color: #1e40af;
   }
   .spec {
     margin: 1.25rem 0;
