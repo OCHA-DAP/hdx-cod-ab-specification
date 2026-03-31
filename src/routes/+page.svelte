@@ -121,7 +121,10 @@
 <main>
   <header>
     <h1>COD-AB Data Validator</h1>
-    <p class="subtitle">Validate administrative boundary files against the COD-AB specification.</p>
+    <p class="subtitle">
+      Validate UN OCHA administrative boundary files against the COD-AB specification — directly in
+      your browser. No account, no upload, no server. Your files stay on your machine.
+    </p>
     <p class="llm-hint">
       To validate with an LLM: <button
         class="copy-prompt-button"
