@@ -25,5 +25,5 @@ vite.config.ts.timestamp-*
 # User files
 CLAUDE.md
 examples/
-boundaries/
+/boundaries/
 scripts_old/
