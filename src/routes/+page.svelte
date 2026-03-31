@@ -1,16 +1,92 @@
 <script lang="ts">
-  import { duckdbState } from '$lib/db/duckdb.svelte';
-  import { runValidation } from '$lib/runner';
-  import type { DatasetResult } from '$lib/runner';
   import FileUpload from '$lib/components/FileUpload.svelte';
   import ResultsReport from '$lib/components/ResultsReport.svelte';
+  import { duckdbState } from '$lib/db/duckdb.svelte';
+  import type { DatasetResult } from '$lib/runner';
+  import { runValidation } from '$lib/runner';
+  import { marked } from 'marked';
+  import { onMount } from 'svelte';
+  import overviewMd from '../../specs/boundaries.md?raw';
+
+  // Eagerly load all boundary source files. Adding/removing/reordering only
+  // requires editing the `sources` list in specs/boundaries.md frontmatter.
+  const sourceModules = import.meta.glob('../../specs/boundaries/*.md', {
+    query: '?raw',
+    import: 'default',
+    eager: true,
+  }) as Record<string, string>;
+
+  function stripFrontmatter(md: string): string {
+    if (!md.startsWith('---')) return md;
+    const end = md.indexOf('\n---', 3);
+    return end === -1 ? md : md.slice(end + 4);
+  }
+
+  function parseSources(md: string): string[] {
+    const fm = md.match(/^---\n([\s\S]*?)\n---/)?.[1] ?? '';
+    return [...fm.matchAll(/^\s+-\s+(.+)$/gm)].map((m) => m[1].trim());
+  }
+
+  const specTabs = [
+    { id: 'overview', label: 'Overview', md: overviewMd },
+    ...parseSources(overviewMd).map((srcPath) => {
+      const filename = srcPath.split('/').pop()!;
+      const id = filename.replace('.md', '');
+      const label = id.charAt(0).toUpperCase() + id.slice(1);
+      const md = sourceModules[`../../${srcPath}`] ?? '';
+      return { id, label, md };
+    }),
+  ];
 
   let files = $state<File[]>([]);
   let running = $state(false);
   let result = $state<DatasetResult | null>(null);
   let runError = $state<string | null>(null);
+  let showSpec = $state(false);
+  let activeTab = $state('overview');
+
+  const validTabIds = new Set(specTabs.map((t) => t.id));
+
+  function parseHash(hash: string): { show: boolean; tab: string } {
+    const h = hash.replace(/^#/, '');
+    if (h === 'spec') return { show: true, tab: 'overview' };
+    if (h.startsWith('spec-')) {
+      const tab = h.slice(5);
+      return { show: true, tab: validTabIds.has(tab) ? tab : 'overview' };
+    }
+    return { show: false, tab: 'overview' };
+  }
+
+  function buildHash(show: boolean, tab: string): string {
+    if (!show) return '';
+    return tab === 'overview' ? '#spec' : `#spec-${tab}`;
+  }
+
+  onMount(() => {
+    const { show, tab } = parseHash(window.location.hash);
+    showSpec = show;
+    activeTab = tab;
+
+    function onHashChange() {
+      const { show: s, tab: t } = parseHash(window.location.hash);
+      showSpec = s;
+      activeTab = t;
+    }
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  });
+
+  $effect(() => {
+    const hash = buildHash(showSpec, activeTab);
+    if (typeof window !== 'undefined' && window.location.hash !== hash) {
+      history.replaceState(null, '', hash || window.location.pathname);
+    }
+  });
 
   let canRun = $derived(duckdbState.ready && files.length > 0 && !running);
+  let activeTabHtml = $derived(
+    marked(stripFrontmatter(specTabs.find((t) => t.id === activeTab)?.md ?? '')) as string,
+  );
 
   async function handleRun() {
     const { db, conn } = duckdbState;
@@ -32,7 +108,40 @@
   <header>
     <h1>COD-AB Data Validator</h1>
     <p class="subtitle">Validate administrative boundary files against the COD-AB specification.</p>
+    <button
+      class="spec-button"
+      onclick={() => {
+        showSpec = !showSpec;
+        history.pushState(null, '', buildHash(showSpec, activeTab) || window.location.pathname);
+      }}
+    >
+      {showSpec ? 'Hide specification' : 'View specification'}
+    </button>
   </header>
+
+  {#if showSpec}
+    <section class="spec">
+      <nav class="spec-tabs">
+        {#each specTabs as tab (tab.id)}
+          <button
+            class="spec-tab"
+            class:active={activeTab === tab.id}
+            onclick={(e) => {
+              activeTab = tab.id;
+              history.pushState(null, '', buildHash(showSpec, tab.id));
+              (e.currentTarget as HTMLButtonElement).blur();
+            }}
+          >
+            {tab.label}
+          </button>
+        {/each}
+      </nav>
+      <div class="spec-content">
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+        {@html activeTabHtml}
+      </div>
+    </section>
+  {/if}
 
   {#if duckdbState.initError}
     <p class="error">Failed to initialise DuckDB: {duckdbState.initError}</p>
@@ -106,5 +215,111 @@
   }
   .run-button:not(:disabled):hover {
     background: #1e40af;
+  }
+  .spec-button {
+    margin-top: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    background: none;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    color: #374151;
+    cursor: pointer;
+  }
+  .spec-button:hover {
+    background: #f3f4f6;
+  }
+  .spec {
+    margin: 1.25rem 0;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    line-height: 1.65;
+  }
+  .spec-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 0 1rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .spec-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .spec-tab {
+    padding: 0.5rem 0.875rem;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-size: 0.85rem;
+    color: #6b7280;
+    cursor: pointer;
+    white-space: nowrap;
+    margin-bottom: -1px;
+  }
+  .spec-tab:hover {
+    color: #111;
+  }
+  .spec-tab.active {
+    color: #1d4ed8;
+    border-bottom-color: #1d4ed8;
+    font-weight: 600;
+  }
+  .spec-content {
+    padding: 1.25rem 1.5rem;
+  }
+  .spec-content :global(h1) {
+    font-size: 1.3rem;
+    margin: 0 0 0.75rem;
+  }
+  .spec-content :global(h2) {
+    font-size: 1.05rem;
+    margin: 1.25rem 0 0.4rem;
+  }
+  .spec-content :global(h3) {
+    font-size: 0.95rem;
+    margin: 1rem 0 0.3rem;
+  }
+  .spec-content :global(p) {
+    margin: 0.4rem 0;
+  }
+  .spec-content :global(ul),
+  .spec-content :global(ol) {
+    margin: 0.4rem 0;
+    padding-left: 1.5rem;
+  }
+  .spec-content :global(table) {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.85rem;
+    margin: 0.5rem 0;
+  }
+  .spec-content :global(th),
+  .spec-content :global(td) {
+    border: 1px solid #d1d5db;
+    padding: 0.35rem 0.6rem;
+    text-align: left;
+  }
+  .spec-content :global(th) {
+    background: #e5e7eb;
+  }
+  .spec-content :global(pre) {
+    background: #e5e7eb;
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-size: 0.82rem;
+  }
+  .spec-content :global(code) {
+    font-size: 0.85em;
+    background: #e5e7eb;
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+  }
+  .spec-content :global(pre code) {
+    background: none;
+    padding: 0;
   }
 </style>

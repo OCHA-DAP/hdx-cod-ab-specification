@@ -36,6 +36,7 @@
   "dependencies": {
     "@duckdb/duckdb-wasm": "^1.33.1-dev41.0",
     "fflate": "^0.8.2",
-    "maplibre-gl": "^5.21.1"
+    "maplibre-gl": "^5.21.1",
+    "marked": "^17.0.5"
   }
 }

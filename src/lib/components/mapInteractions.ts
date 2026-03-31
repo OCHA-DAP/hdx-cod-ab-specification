@@ -7,7 +7,10 @@ function buildTooltipHtml(properties: Record<string, unknown> | null): string {
   const entries = Object.entries(properties);
   if (entries.length === 0) return '<em class="tt-empty">No attributes</em>';
   const rows = entries
-    .map(([k, v]) => `<tr><td class="tt-key">${k}</td><td class="tt-val">${v == null ? '' : String(v)}</td></tr>`)
+    .map(
+      ([k, v]) =>
+        `<tr><td class="tt-key">${k}</td><td class="tt-val">${v == null ? '' : String(v)}</td></tr>`,
+    )
     .join('');
   return `<table>${rows}</table>`;
 }
@@ -17,7 +20,11 @@ export function setupHoverTooltip(
   layers: string[],
   getEnabled: () => boolean,
 ): void {
-  const popup = new Popup({ closeButton: false, closeOnClick: false, className: 'preview-tooltip' });
+  const popup = new Popup({
+    closeButton: false,
+    closeOnClick: false,
+    className: 'preview-tooltip',
+  });
   popup.trackPointer();
 
   map.on('mousemove', (e) => {
@@ -34,7 +41,10 @@ export function setupHoverTooltip(
     }
 
     map.getCanvas().style.cursor = 'pointer';
-    if (!getEnabled()) { popup.remove(); return; }
+    if (!getEnabled()) {
+      popup.remove();
+      return;
+    }
 
     const html = buildTooltipHtml(features[0].properties);
     popup.setHTML(html).addTo(map);

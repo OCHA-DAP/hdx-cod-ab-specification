@@ -13,4 +13,10 @@ import type { Check } from './types.ts';
  *   2. Import it here and add it to this array
  *   Nothing else needs to change.
  */
-export const checks: Check[] = [checkGeometry, checkPolygon, checkTopology, checkVersions, checkDates];
+export const checks: Check[] = [
+  checkGeometry,
+  checkPolygon,
+  checkTopology,
+  checkVersions,
+  checkDates,
+];

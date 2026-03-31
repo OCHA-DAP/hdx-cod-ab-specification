@@ -41,7 +41,10 @@ async function runChecksAndPreview(
   const layerType = inferLayerType(layerName);
   const checkResults: Record<string, CheckResult> = {};
   for (const check of checks) {
-    if (!check.appliesTo.includes('all') && (layerType === null || !check.appliesTo.includes(layerType))) {
+    if (
+      !check.appliesTo.includes('all') &&
+      (layerType === null || !check.appliesTo.includes(layerType))
+    ) {
       continue;
     }
     checkResults[check.name] = await check.run(conn, columns);
