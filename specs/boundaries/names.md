@@ -30,9 +30,14 @@ Name values within a dataset MUST be internally consistent in style. The followi
 - **Consistent use of abbreviated vs. full forms.** Within a single name column, all names MUST use either the abbreviated form or the full form of a descriptor — not a mixture. For example, if `Special` is used in one name, `SP` MUST NOT appear in another (e.g., all rows should use `Special Administrative Region` or all should use `SAR`, not a mix). Abbreviations that are part of the official name of a unit (i.e., the full official name contains the abbreviation) are permitted.
 - **Consistent script and encoding.** All values within a single name column MUST be in the script and encoding appropriate for the declared language (`lang`, `lang1`, etc.) and MUST be consistently encoded throughout the file (e.g., no mixing of Latin and non-Latin scripts within the same column). Each individual name value MUST contain only characters from the Unicode block(s) appropriate for the declared language. Validators SHOULD flag values containing characters outside the expected block(s) as violations.
 
-### Name Uniqueness
+### Name Uniqueness and Consistency
 
-Within any parent unit, child unit names MUST be unique. No two units at the same level sharing the same parent may have the same name in any name column (`adm{L}_name`, `adm{L}_name1`, `adm{L}_name2`, `adm{L}_name3`). This ensures that the concatenation of name columns across all levels forms a unique identifier for each row. Null values are excluded from this check.
+The name columns collectively form a unique identifier for each row: the concatenation of names across all levels (e.g. `adm0_name` + `adm1_name` + `adm2_name`) must uniquely identify each unit. This is enforced at each level independently via the two rules below, which together guarantee uniqueness of the full name path by transitivity. Each unit at level L is identified by its `adm{L}_pcode`. These checks apply to every level L present in the file. Null name values are excluded from both checks.
+
+Two requirements apply to every level L present in the file:
+
+- **No duplicate names within a parent**: No two child units with the same parent (`adm{L-1}_pcode`) may have the same value in any name column (`adm{L}_name`, `adm{L}_name1`, `adm{L}_name2`, `adm{L}_name3`). This catches two different areas that have been given the same name.
+- **No name variation for the same P-code**: Every row carrying the same `adm{L}_pcode` MUST use the same value in each name column. This catches the same area named inconsistently across rows (e.g. a typo or variant spelling).
 
 ## Admin 0 Country Name
 

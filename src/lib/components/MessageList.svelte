@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { marked } from 'marked';
+
   let {
     violations = [],
     warnings = [],
@@ -8,26 +10,30 @@
     warnings?: string[];
     info?: string[];
   } = $props();
+
+  function md(s: string): string {
+    return marked.parseInline(s) as string;
+  }
 </script>
 
 {#if violations.length}
   <h4 class="heading violation-heading">Violations (MUST)</h4>
   <ul class="message-list violations">
-    {#each violations as v (v)}<li>{v}</li>{/each}
+    {#each violations as v (v)}<li>{@html md(v)}</li>{/each}
   </ul>
 {/if}
 
 {#if warnings.length}
   <h4 class="heading warning-heading">Warnings (SHOULD)</h4>
   <ul class="message-list warnings">
-    {#each warnings as w (w)}<li>{w}</li>{/each}
+    {#each warnings as w (w)}<li>{@html md(w)}</li>{/each}
   </ul>
 {/if}
 
 {#if info.length}
   <h4 class="heading info-heading">Info</h4>
   <ul class="message-list info-list">
-    {#each info as i (i)}<li>{i}</li>{/each}
+    {#each info as i (i)}<li>{@html md(i)}</li>{/each}
   </ul>
 {/if}
 

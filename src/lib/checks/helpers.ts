@@ -1,6 +1,40 @@
 import type { AsyncDuckDBConnection } from '@duckdb/duckdb-wasm';
 
 /**
+ * Describes the four name columns for a single admin level.
+ * The column name strings are always populated regardless of whether the column
+ * is actually present in the dataset — callers should check against `columns`.
+ */
+export interface NameColumnGroup {
+  level: number;
+  name: string; // adm{L}_name
+  name1: string; // adm{L}_name1
+  name2: string; // adm{L}_name2
+  name3: string; // adm{L}_name3
+}
+
+/**
+ * Return a NameColumnGroup for every admin level that has at least one
+ * adm{L}_name* column present in `columns`, sorted by level ascending.
+ */
+export function getNameColumnGroups(columns: string[]): NameColumnGroup[] {
+  const levels = new Set<number>();
+  for (const col of columns) {
+    const m = col.match(/^adm(\d+)_name\d*$/);
+    if (m) levels.add(Number(m[1]));
+  }
+  return Array.from(levels)
+    .sort((a, b) => a - b)
+    .map((level) => ({
+      level,
+      name: `adm${level}_name`,
+      name1: `adm${level}_name1`,
+      name2: `adm${level}_name2`,
+      name3: `adm${level}_name3`,
+    }));
+}
+
+/**
  * Return all adm{L}_pcode columns present in `columns`, sorted by level ascending.
  */
 export function getPcodeColumns(columns: string[]): Array<{ level: number; col: string }> {
