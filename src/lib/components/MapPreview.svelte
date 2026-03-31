@@ -4,6 +4,7 @@
   import 'maplibre-gl/dist/maplibre-gl.css';
   import { onDestroy, onMount } from 'svelte';
   import IssuesTable from './IssuesTable.svelte';
+  import { setupHoverTooltip } from './mapInteractions';
   import { featureBounds, parseOverlayFeatures } from './mapUtils';
 
   let { preview, overlays = [] }: { preview: PreviewData; overlays?: string[] } = $props();
@@ -11,6 +12,8 @@
   let container: HTMLDivElement | undefined;
   let map: MaplibreMap | undefined;
   let blobUrl: string | undefined;
+
+  let showTooltip = $state(true);
 
   const issueFeatures = $derived(parseOverlayFeatures(overlays));
 
@@ -156,6 +159,8 @@
           { padding: 24, animate: false },
         );
       }
+
+      setupHoverTooltip(map, ['preview-fill', 'preview-line', 'preview-circle'], () => showTooltip);
     });
   });
 
@@ -165,7 +170,12 @@
   });
 </script>
 
-<div bind:this={container} class="map"></div>
+<div bind:this={container} class="map">
+  <label class="tooltip-toggle">
+    <input type="checkbox" bind:checked={showTooltip} />
+    Attributes
+  </label>
+</div>
 
 {#if issueFeatures.length > 0}
   <IssuesTable features={issueFeatures} onZoom={zoomToFeature} />
@@ -173,11 +183,65 @@
 
 <style>
   .map {
+    position: relative;
     width: 100%;
     aspect-ratio: 1 / 1;
     border-radius: 4px;
     border: 1px solid #e5e7eb;
     margin-bottom: 0.75rem;
     overflow: hidden;
+  }
+
+  .tooltip-toggle {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 10;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #374151;
+    user-select: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  :global(.preview-tooltip .maplibregl-popup-content) {
+    padding: 6px 8px;
+    font-size: 11px;
+    line-height: 1.5;
+    max-height: 40vh;
+    overflow-y: auto;
+  }
+
+  :global(.preview-tooltip table) {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  :global(.preview-tooltip .tt-key) {
+    font-weight: 600;
+    color: #374151;
+    padding-right: 8px;
+    padding-bottom: 2px;
+    white-space: nowrap;
+    vertical-align: top;
+  }
+
+  :global(.preview-tooltip .tt-val) {
+    color: #6b7280;
+    word-break: break-all;
+    vertical-align: top;
+    padding-bottom: 2px;
+  }
+
+  :global(.preview-tooltip .tt-empty) {
+    color: #9ca3af;
+    font-style: italic;
   }
 </style>

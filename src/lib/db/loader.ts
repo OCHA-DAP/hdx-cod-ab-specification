@@ -106,16 +106,30 @@ export async function buildPreviewData(conn: AsyncDuckDBConnection): Promise<Pre
     // Extract geometry as GeoJSON features. COD-AB data is always WGS-84 so no
     // transform needed. No limit — MapLibre handles large files in its worker;
     // the blob is freed once loaded.
+    const DATE_TYPES = /^(DATE|TIME|TIMESTAMP)/i;
+    const propCols = allCols
+      .filter((r) => r.column_type !== 'GEOMETRY')
+      .map((r) => {
+        const q = JSON.stringify(r.column_name);
+        const expr = DATE_TYPES.test(r.column_type) ? `CAST(${q} AS VARCHAR)` : q;
+        return { key: r.column_name, expr: `${expr} AS ${q}` };
+      });
+
     const rows = await conn.query(`
-      SELECT TRY(ST_AsGeoJSON(${quotedCol})) AS g
+      SELECT TRY(ST_AsGeoJSON(${quotedCol})) AS g${propCols.length ? ', ' + propCols.map((c) => c.expr).join(', ') : ''}
       FROM data
       WHERE ${quotedCol} IS NOT NULL
     `);
 
     const parts: string[] = [];
     for (const row of rows.toArray()) {
-      const g = (row as Record<string, unknown>).g;
-      if (g != null) parts.push(`{"type":"Feature","geometry":${g},"properties":{}}`);
+      const r = row as Record<string, unknown>;
+      if (r.g == null) continue;
+      const props: Record<string, unknown> = {};
+      for (const { key } of propCols) {
+        props[key] = r[key] ?? null;
+      }
+      parts.push(`{"type":"Feature","geometry":${r.g},"properties":${JSON.stringify(props)}}`);
     }
     if (parts.length === 0) return null;
 
