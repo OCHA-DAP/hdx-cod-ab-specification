@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { unzip } from 'fflate';
+
   let {
     files = $bindable<File[]>([]),
     disabled = false,
@@ -70,6 +72,40 @@
       singles.push(f.name);
     }
     return [...singles, ...Array.from(shpStems.values()).sort()].join(', ');
+  }
+
+  async function extractZip(file: File): Promise<File[]> {
+    const data = new Uint8Array(await file.arrayBuffer());
+    const entries = await new Promise<Record<string, Uint8Array>>((resolve, reject) => {
+      unzip(data, (err, result) => (err ? reject(err) : resolve(result)));
+    });
+    const extracted: File[] = [];
+    for (const [path, bytes] of Object.entries(entries)) {
+      // Skip Mac metadata directories and empty directory entries
+      if (path.startsWith('__MACOSX/') || bytes.length === 0) continue;
+      const name = path.split('/').pop()!;
+      const inner = new File([bytes.slice()], name);
+      Object.defineProperty(inner, 'webkitRelativePath', {
+        value: path,
+        writable: false,
+        configurable: true,
+        enumerable: true,
+      });
+      extracted.push(inner);
+    }
+    return extracted;
+  }
+
+  async function expandZips(fileList: File[]): Promise<File[]> {
+    const result: File[] = [];
+    for (const file of fileList) {
+      if (file.name.toLowerCase().endsWith('.zip')) {
+        result.push(...(await extractZip(file)));
+      } else {
+        result.push(file);
+      }
+    }
+    return result;
   }
 
   async function readAllEntries(reader: FileSystemDirectoryReader): Promise<FileSystemEntry[]> {
@@ -145,15 +181,15 @@
       .filter(Boolean) as FileSystemEntry[];
     try {
       const allFiles = (await Promise.all(entries.map((e) => readEntry(e)))).flat();
-      files = filterAndSort(allFiles);
+      files = filterAndSort(await expandZips(allFiles));
     } catch (e) {
       console.error('Failed to read dropped files:', e);
     }
   }
 
-  function handleBrowse(event: Event) {
+  async function handleBrowse(event: Event) {
     const input = event.target as HTMLInputElement;
-    files = filterAndSort(Array.from(input.files ?? []));
+    files = filterAndSort(await expandZips(Array.from(input.files ?? [])));
   }
 </script>
 
@@ -171,7 +207,7 @@
   <label class="browse-label">
     <input
       type="file"
-      accept={[...SINGLE_EXTS, '.json', ...SHP_EXTS].join(',')}
+      accept={[...SINGLE_EXTS, '.json', ...SHP_EXTS, '.zip'].join(',')}
       multiple
       onchange={handleBrowse}
       {disabled}
