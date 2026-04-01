@@ -142,6 +142,30 @@ export async function buildPreviewData(conn: AsyncDuckDBConnection): Promise<Pre
   }
 }
 
+// ── Named-table loader (for cross-layer hierarchy checks) ─────────────────────
+// Loads a layer into a named DuckDB table rather than the standard 'data' table.
+// The caller is responsible for DROP TABLE after use.
+
+export async function loadLayerAsTable(
+  filePath: string,
+  layerName: string,
+  tableName: string,
+  conn: AsyncDuckDBConnection,
+): Promise<string[]> {
+  await conn.query(`DROP TABLE IF EXISTS ${tableName}`);
+  if (filePath.toLowerCase().endsWith('.parquet')) {
+    await conn.query(
+      `CREATE TABLE ${tableName} AS SELECT * FROM read_parquet(${JSON.stringify(filePath)})`,
+    );
+  } else {
+    await conn.query(
+      `CREATE TABLE ${tableName} AS SELECT * FROM ST_Read(${JSON.stringify(filePath)}, layer=${JSON.stringify(layerName)})`,
+    );
+  }
+  const desc = await conn.query(`DESCRIBE ${tableName}`);
+  return desc.toArray().map((r) => (r as Record<string, unknown>).column_name as string);
+}
+
 // ── Multi-file registration helpers ──────────────────────────────────────────
 // These formats require multiple component files to be loaded into DuckDB's
 // virtual FS before ST_Read can open them.

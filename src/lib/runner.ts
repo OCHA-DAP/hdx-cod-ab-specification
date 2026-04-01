@@ -1,9 +1,10 @@
 import type { AsyncDuckDB, AsyncDuckDBConnection } from '@duckdb/duckdb-wasm';
-import { checks } from './checks/registry.ts';
-import type { CheckResult } from './checks/types.ts';
+import { checks, hierarchyChecks } from './checks/registry.ts';
+import type { CheckResult, LayerContext } from './checks/types.ts';
 import type { PreviewData } from './db/loader.ts';
 import {
   buildPreviewData,
+  loadLayerAsTable,
   loadParquet,
   listSpatialLayers,
   loadSpatialLayer,
@@ -28,6 +29,12 @@ function inferLayerType(layerName: string): 'admin' | 'lines' | 'points' | null 
   if (/_(adminlines?|lines?|lin)\b/i.test(layerName)) return 'lines';
   if (/_(adminpoints?|points?|pts?)\b/i.test(layerName)) return 'points';
   return null;
+}
+
+// Infer the numeric admin level from the layer name, e.g. "_adm1" → 1.
+function inferAdminLevel(layerName: string): number | null {
+  const m = layerName.match(/_adm(?:in)?(\d)/i);
+  return m ? Number(m[1]) : null;
 }
 
 async function runChecksAndPreview(
@@ -147,6 +154,7 @@ async function processLayers(filePath: string, conn: AsyncDuckDBConnection): Pro
 /**
  * Runs all registered checks against each layer sequentially.
  * All formats are loaded via ST_Read (GDAL). Shapefiles are grouped before loading.
+ * After per-layer checks, runs hierarchy checks against adjacent admin level pairs.
  */
 export async function runValidation(
   files: File[],
@@ -154,6 +162,34 @@ export async function runValidation(
   conn: AsyncDuckDBConnection,
 ): Promise<DatasetResult> {
   const results: FileResult[] = [];
+  // Map from admin level → LayerContext, populated as admin layers are processed.
+  // First-found wins when multiple layers share the same level.
+  const adminLayers = new Map<number, LayerContext>();
+
+  // Attempt to register a successfully loaded FileResult as an admin layer.
+  // filePath and layerName are parsed from fileResult.fileName:
+  //   multi-layer format  → "<filePath>::<layerName>"
+  //   single-layer format → "<filePath>" (layerName derived from stem)
+  function trackAdminLayer(fileResult: FileResult) {
+    if (fileResult.loadError) return;
+    const sep = fileResult.fileName.indexOf('::');
+    const filePath = sep === -1 ? fileResult.fileName : fileResult.fileName.slice(0, sep);
+    const layerName =
+      sep === -1
+        ? fileResult.fileName.replace(/\.[^.]+$/, '')
+        : fileResult.fileName.slice(sep + 2);
+    const level = inferAdminLevel(layerName);
+    if (level === null || adminLayers.has(level)) return;
+    adminLayers.set(level, {
+      tableName: '', // set during the hierarchy phase
+      columns: [], // set during the hierarchy phase via loadLayerAsTable
+      adminLevel: level,
+      layerName,
+      filePath,
+      fileName: fileResult.fileName,
+    });
+  }
+
   const { shpGroups, individualFiles } = groupFiles(files);
 
   // ── Individual files ──────────────────────────────────────────────────────
@@ -179,6 +215,7 @@ export async function runValidation(
         fileResult.loadError = e instanceof Error ? e.message : String(e);
       }
       results.push(fileResult);
+      trackAdminLayer(fileResult);
       continue;
     }
 
@@ -187,7 +224,9 @@ export async function runValidation(
     // Multi-layer files (e.g. GeoPackage) produce one FileResult per layer.
     const buffer = new Uint8Array(await file.arrayBuffer());
     await db.registerFileBuffer(file.name, buffer);
-    results.push(...(await processLayers(file.name, conn)));
+    const layerResults = await processLayers(file.name, conn);
+    results.push(...layerResults);
+    for (const fr of layerResults) trackAdminLayer(fr);
   }
 
   // ── Shapefiles ────────────────────────────────────────────────────────────
@@ -206,7 +245,53 @@ export async function runValidation(
       });
       continue;
     }
-    results.push(...(await processLayers(shpPath, conn)));
+    const layerResults = await processLayers(shpPath, conn);
+    results.push(...layerResults);
+    for (const fr of layerResults) trackAdminLayer(fr);
+  }
+
+  // ── Hierarchy checks ──────────────────────────────────────────────────────
+  // For each pair of consecutive admin levels (N, N+1), load both into named
+  // DuckDB tables and run all registered hierarchy checks.
+  // Results are attached to the child layer's FileResult.
+
+  const sortedLevels = [...adminLayers.keys()].sort((a, b) => a - b);
+  for (let i = 0; i < sortedLevels.length - 1; i++) {
+    const pLevel = sortedLevels[i];
+    const cLevel = sortedLevels[i + 1];
+    if (cLevel !== pLevel + 1) continue; // skip non-consecutive levels
+
+    const parentInfo = adminLayers.get(pLevel)!;
+    const childInfo = adminLayers.get(cLevel)!;
+
+    // Load both layers into named tables; collect columns for LayerContext.
+    const parentColumns = await loadLayerAsTable(
+      parentInfo.filePath,
+      parentInfo.layerName,
+      'parent_layer',
+      conn,
+    );
+    const childColumns = await loadLayerAsTable(
+      childInfo.filePath,
+      childInfo.layerName,
+      'child_layer',
+      conn,
+    );
+
+    const parentCtx: LayerContext = { ...parentInfo, tableName: 'parent_layer', columns: parentColumns };
+    const childCtx: LayerContext = { ...childInfo, tableName: 'child_layer', columns: childColumns };
+
+    const childFileResult = results.find((r) => r.fileName === childCtx.fileName);
+
+    for (const check of hierarchyChecks) {
+      if (check.appliesToPair === 'adjacent-admin') {
+        const checkResult = await check.run(conn, parentCtx, childCtx);
+        if (childFileResult) childFileResult.checks[check.name] = checkResult;
+      }
+    }
+
+    await conn.query('DROP TABLE IF EXISTS parent_layer');
+    await conn.query('DROP TABLE IF EXISTS child_layer');
   }
 
   return { files: results };

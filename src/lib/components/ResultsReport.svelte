@@ -1,7 +1,9 @@
 <script lang="ts">
-  import { checks } from '$lib/checks/registry';
+  import { checks, hierarchyChecks } from '$lib/checks/registry';
   import type { DatasetResult } from '$lib/runner';
   import CheckRow from './CheckRow.svelte';
+
+  const allChecks = [...checks, ...hierarchyChecks];
 
   let { result }: { result: DatasetResult } = $props();
 
@@ -29,7 +31,7 @@
   </div>
 
   {#each result.files as fileResult (fileResult.fileName)}
-    <CheckRow {fileResult} {checks} />
+    <CheckRow {fileResult} checks={allChecks} />
   {/each}
 </section>
 

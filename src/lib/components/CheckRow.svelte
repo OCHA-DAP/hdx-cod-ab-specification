@@ -1,10 +1,10 @@
 <script lang="ts">
-  import type { Check } from '$lib/checks/types';
   import type { FileResult } from '$lib/runner';
   import MapPreview from './MapPreview.svelte';
   import MessageList from './MessageList.svelte';
 
-  let { fileResult, checks }: { fileResult: FileResult; checks: Check[] } = $props();
+  type CheckMeta = { name: string; label: string; specSection: string };
+  let { fileResult, checks }: { fileResult: FileResult; checks: CheckMeta[] } = $props();
 
   let mapOpen = $state(Object.values(fileResult.checks).some((r) => r.overlayGeojson != null));
 
