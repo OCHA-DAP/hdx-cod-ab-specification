@@ -22,12 +22,12 @@ export const checks: Check[] = [
   checkGeometry,
   checkPolygon,
   checkTopology,
-  checkVersions,
-  checkDates,
   checkPcodeFormat,
   checkPcodeRefs,
   checkNames,
   checkLang,
+  checkDates,
+  checkVersions,
 ];
 
 /**

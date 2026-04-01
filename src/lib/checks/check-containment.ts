@@ -2,7 +2,7 @@ import type { AsyncDuckDBConnection } from '@duckdb/duckdb-wasm';
 import type { CheckResult, HierarchyCheck, LayerContext } from './types.ts';
 
 /** Maximum child feature count before the containment sub-check is skipped. */
-const CONTAINMENT_FEATURE_LIMIT = 5000;
+const CONTAINMENT_FEATURE_LIMIT = 50000;
 
 /** Maximum number of polygon identifiers to list in a violation message. */
 const MAX_IDS_SHOWN = 10;
@@ -20,10 +20,7 @@ async function findGeomColumn(
  * Returns a SQL expression and display label for the best available identifier
  * column at the given admin level. Prefers pcode, then name, then row number.
  */
-function identifierExpr(
-  columns: string[],
-  level: number,
-): { expr: string; label: string } {
+function identifierExpr(columns: string[], level: number): { expr: string; label: string } {
   const pcode = `adm${level}_pcode`;
   if (columns.includes(pcode)) return { expr: `${JSON.stringify(pcode)}::VARCHAR`, label: pcode };
   const name = `adm${level}_name`;
@@ -65,9 +62,7 @@ async function run(
   const childId = identifierExpr(child.columns, child.adminLevel);
 
   // ── Feature count guard ────────────────────────────────────────────────────
-  const countResult = await conn.query(
-    `SELECT COUNT(*) AS n FROM ${ct} WHERE ${cg} IS NOT NULL`,
-  );
+  const countResult = await conn.query(`SELECT COUNT(*) AS n FROM ${ct} WHERE ${cg} IS NOT NULL`);
   const childCount = Number((countResult.toArray()[0] as Record<string, unknown>).n);
 
   // ── Sub-check A: Containment ───────────────────────────────────────────────
@@ -130,6 +125,54 @@ async function run(
         `All adm${child.adminLevel} polygons are fully contained within exactly one adm${parent.adminLevel} polygon.`,
       );
     }
+
+    // For each crossing child, subtract its declared parent polygon (matched by
+    // p-code) to reveal only the parts that spill over the boundary.
+    const parentPcodeCol = `adm${parent.adminLevel}_pcode`;
+    let overlayGeojson: string | undefined;
+    if (crossesCount > 0 && child.columns.includes(parentPcodeCol)) {
+      const ppc = JSON.stringify(parentPcodeCol);
+      const crossGeomResult = await conn.query(`
+        WITH numbered AS (
+          SELECT row_number() OVER () AS rn, ${cg} AS geom, ${ppc} AS parent_pcode
+          FROM ${ct}
+          WHERE ${cg} IS NOT NULL
+        ),
+        per_child AS (
+          SELECT c.rn, COUNT(*) AS cnt
+          FROM numbered c
+          JOIN ${pt} p ON ST_Intersects(c.geom, p.${pg}) AND NOT ST_Touches(c.geom, p.${pg})
+          GROUP BY c.rn
+        ),
+        crossers AS (
+          SELECT c.rn, c.geom, c.parent_pcode
+          FROM numbered c
+          JOIN per_child pc ON c.rn = pc.rn
+          WHERE pc.cnt > 1
+        )
+        SELECT TRY(ST_AsGeoJSON(ST_Difference(cr.geom, p.${pg}))) AS g
+        FROM crossers cr
+        JOIN ${pt} p ON cr.parent_pcode = p.${ppc}
+      `);
+      const crossFeatures = crossGeomResult
+        .toArray()
+        .map((r) => (r as Record<string, unknown>).g)
+        .filter((g): g is string => g != null)
+        .map(
+          (g) => `{"type":"Feature","geometry":${g},"properties":{"issueType":"boundary-cross"}}`,
+        );
+      if (crossFeatures.length > 0) {
+        overlayGeojson = `{"type":"FeatureCollection","features":[${crossFeatures.join(',')}]}`;
+      }
+    }
+
+    return {
+      passed: violations.length === 0,
+      violations,
+      warnings,
+      info,
+      overlayGeojson,
+    };
   }
 
   return {

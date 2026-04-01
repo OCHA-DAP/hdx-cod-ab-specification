@@ -22,8 +22,15 @@
               class="badge"
               class:overlap={feature.properties.issueType === 'overlap'}
               class:gap={feature.properties.issueType === 'gap'}
+              class:boundary-cross={feature.properties.issueType === 'boundary-cross'}
             >
-              {feature.properties.issueType === 'overlap' ? 'Overlap' : 'Gap'}
+              {feature.properties.issueType === 'overlap'
+                ? 'Overlap'
+                : feature.properties.issueType === 'gap'
+                  ? 'Gap'
+                  : feature.properties.issueType === 'boundary-cross'
+                    ? 'Boundary Cross'
+                    : feature.properties.issueType}
             </span>
           </td>
         </tr>
@@ -104,5 +111,10 @@
   .badge.gap {
     background: #fef9c3;
     color: #a16207;
+  }
+
+  .badge.boundary-cross {
+    background: #ffedd5;
+    color: #c2410c;
   }
 </style>
