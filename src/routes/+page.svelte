@@ -5,6 +5,7 @@
   import type { DatasetResult } from '$lib/runner';
   import { runValidation } from '$lib/runner';
   import { marked } from 'marked';
+  import { base } from '$app/paths';
   import { onMount, untrack } from 'svelte';
   import overviewMd from '../../specs/boundaries.md?raw';
 
@@ -49,7 +50,7 @@
   async function copyPrompt() {
     copyState = 'copying';
     try {
-      const res = await fetch('/prompt');
+      const res = await fetch(`${base}/prompt`);
       const text = await res.text();
       await navigator.clipboard.writeText(text);
       copyState = 'copied';
