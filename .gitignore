@@ -15,6 +15,7 @@ Thumbs.db
 !.env.test
 
 # User files
+.claude
 CLAUDE.md
 examples/
 /boundaries/
