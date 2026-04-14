@@ -1,4 +1,4 @@
-import * as duckdb from '@duckdb/duckdb-wasm';
+import * as duckdb from "@duckdb/duckdb-wasm";
 
 class DuckDBState {
   // db and conn are set once before ready=true; no reactivity needed on them.
@@ -19,7 +19,7 @@ export async function initDuckDB(): Promise<void> {
     // Wrap the CDN worker URL in a Blob so it loads under the same origin
     const workerUrl = URL.createObjectURL(
       new Blob([`importScripts("${bundle.mainWorker}");`], {
-        type: 'text/javascript',
+        type: "text/javascript",
       }),
     );
     const worker = new Worker(workerUrl);
@@ -38,12 +38,12 @@ export async function initDuckDB(): Promise<void> {
     // Failure is non-fatal — errors surface only when validating those formats.
     try {
       try {
-        await conn.query('LOAD spatial;');
+        await conn.query("LOAD spatial;");
       } catch {
-        await conn.query('INSTALL spatial; LOAD spatial;');
+        await conn.query("INSTALL spatial; LOAD spatial;");
       }
     } catch {
-      console.warn('DuckDB spatial extension unavailable — GDAL support disabled.');
+      console.warn("DuckDB spatial extension unavailable — GDAL support disabled.");
     }
 
     duckdbState.ready = true;

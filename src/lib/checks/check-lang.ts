@@ -1,11 +1,11 @@
-import type { AsyncDuckDBConnection } from '@duckdb/duckdb-wasm';
-import { getNameColumnGroups } from './helpers.ts';
-import type { Check, CheckResult } from './types.ts';
+import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
+import { getNameColumnGroups } from "./helpers.ts";
+import type { Check, CheckResult } from "./types.ts";
 
 // Basic BCP 47 primary language tag: 2–3 ASCII letters. The spec also constrains max length to 3.
 const BCP47_RE = String.raw`^[a-zA-Z]{2,3}$`;
 
-const ALT_LANG_COLS = ['lang1', 'lang2', 'lang3'] as const;
+const ALT_LANG_COLS = ["lang1", "lang2", "lang3"] as const;
 
 async function run(conn: AsyncDuckDBConnection, columns: string[]): Promise<CheckResult> {
   const violations: string[] = [];
@@ -13,17 +13,17 @@ async function run(conn: AsyncDuckDBConnection, columns: string[]): Promise<Chec
   const info: string[] = [];
 
   // ── A. Column presence ────────────────────────────────────────────────────
-  for (const col of ['lang', 'lang1', 'lang2', 'lang3'] as const) {
+  for (const col of ["lang", "lang1", "lang2", "lang3"] as const) {
     if (!columns.includes(col)) {
       violations.push(
-        col === 'lang'
-          ? '`lang` column is absent. `lang` MUST be present in all datasets.'
+        col === "lang"
+          ? "`lang` column is absent. `lang` MUST be present in all datasets."
           : `\`${col}\` column is absent. Language columns MUST be present (values may be null).`,
       );
     }
   }
 
-  if (!columns.includes('lang')) {
+  if (!columns.includes("lang")) {
     return { passed: false, violations, warnings, info };
   }
 
@@ -65,7 +65,7 @@ FROM data
     );
   }
   if (langDistinctCount > 1) {
-    const listed = langDistinctValues.map((v) => `"${v}"`).join(', ');
+    const listed = langDistinctValues.map((v) => `"${v}"`).join(", ");
     violations.push(
       `\`lang\` has multiple distinct values: [${listed}]. All rows MUST share the same \`lang\` value.`,
     );
@@ -115,7 +115,7 @@ FROM data
     );
 
     if (distinctNonNull > 1) {
-      const listed = distinctValues.map((v) => `"${v}"`).join(', ');
+      const listed = distinctValues.map((v) => `"${v}"`).join(", ");
       violations.push(
         `\`${col}\` has multiple non-null distinct values: [${listed}]. ` +
           `All rows MUST share the same \`${col}\` value.`,
@@ -141,7 +141,7 @@ FROM data
     const nullCheckResult = await conn.query(
       `
 SELECT
-  ${presentAltLangs.map((c) => `COUNT(*) FILTER (WHERE "${c}" IS NOT NULL) AS ${c}_present`).join(',\n  ')}
+  ${presentAltLangs.map((c) => `COUNT(*) FILTER (WHERE "${c}" IS NOT NULL) AS ${c}_present`).join(",\n  ")}
 FROM data
     `.trim(),
     );
@@ -156,7 +156,7 @@ FROM data
       // langCol is entirely null — all corresponding adm{L}_nameN must also be null.
       const n = langCol.slice(-1); // '1', '2', or '3'
       for (const g of nameGroups) {
-        const nameCol = g[`name${n}` as 'name1' | 'name2' | 'name3'];
+        const nameCol = g[`name${n}` as "name1" | "name2" | "name3"];
         if (!columns.includes(nameCol)) continue;
 
         const r = await conn.query(
@@ -178,17 +178,17 @@ FROM data
   }
 
   info.push(
-    'Not checked: Admin 0 country name (UN M49) — requires an external lookup table. ' +
-      '`lang` romanization — only BCP 47 format is validated.',
+    "Not checked: Admin 0 country name (UN M49) — requires an external lookup table. " +
+      "`lang` romanization — only BCP 47 format is validated.",
   );
 
   return { passed: violations.length === 0, violations, warnings, info };
 }
 
 export const checkLang: Check = {
-  name: 'check_lang',
-  label: 'Language Columns',
-  specSection: 'Names',
-  appliesTo: ['admin'],
+  name: "check_lang",
+  label: "Language Columns",
+  specSection: "Names",
+  appliesTo: ["admin"],
   run,
 };

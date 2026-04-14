@@ -1,4 +1,4 @@
-import { Popup, type Map as MaplibreMap, type PointLike } from 'maplibre-gl';
+import { Popup, type Map as MaplibreMap, type PointLike } from "maplibre-gl";
 
 const HIT_RADIUS = 4; // px around cursor to query
 
@@ -9,9 +9,9 @@ function buildTooltipHtml(properties: Record<string, unknown> | null): string {
   const rows = entries
     .map(
       ([k, v]) =>
-        `<tr><td class="tt-key">${k}</td><td class="tt-val">${v == null ? '' : String(v)}</td></tr>`,
+        `<tr><td class="tt-key">${k}</td><td class="tt-val">${v == null ? "" : String(v)}</td></tr>`,
     )
-    .join('');
+    .join("");
   return `<table>${rows}</table>`;
 }
 
@@ -23,11 +23,11 @@ export function setupHoverTooltip(
   const popup = new Popup({
     closeButton: false,
     closeOnClick: false,
-    className: 'preview-tooltip',
+    className: "preview-tooltip",
   });
   popup.trackPointer();
 
-  map.on('mousemove', (e) => {
+  map.on("mousemove", (e) => {
     const box: [PointLike, PointLike] = [
       [e.point.x - HIT_RADIUS, e.point.y - HIT_RADIUS],
       [e.point.x + HIT_RADIUS, e.point.y + HIT_RADIUS],
@@ -35,12 +35,12 @@ export function setupHoverTooltip(
     const features = map.queryRenderedFeatures(box, { layers });
 
     if (features.length === 0) {
-      map.getCanvas().style.cursor = '';
+      map.getCanvas().style.cursor = "";
       popup.remove();
       return;
     }
 
-    map.getCanvas().style.cursor = 'pointer';
+    map.getCanvas().style.cursor = "pointer";
     if (!getEnabled()) {
       popup.remove();
       return;
@@ -50,8 +50,8 @@ export function setupHoverTooltip(
     popup.setHTML(html).addTo(map);
   });
 
-  map.on('mouseout', () => {
-    map.getCanvas().style.cursor = '';
+  map.on("mouseout", () => {
+    map.getCanvas().style.cursor = "";
     popup.remove();
   });
 }

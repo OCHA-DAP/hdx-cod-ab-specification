@@ -1,14 +1,14 @@
-import { checkContainment } from './check-containment.ts';
-import { checkDates } from './check-dates.ts';
-import { checkGeometry } from './check-geometry.ts';
-import { checkLang } from './check-lang.ts';
-import { checkNames } from './check-names.ts';
-import { checkPcodeFormat } from './check-pcode-format.ts';
-import { checkPcodeRefs } from './check-pcode-refs.ts';
-import { checkPolygon } from './check-polygon.ts';
-import { checkTopology } from './check-topology.ts';
-import { checkVersions } from './check-versions.ts';
-import type { Check, HierarchyCheck } from './types.ts';
+import { checkContainment } from "./check-containment.ts";
+import { checkDates } from "./check-dates.ts";
+import { checkGeometry } from "./check-geometry.ts";
+import { checkLang } from "./check-lang.ts";
+import { checkNames } from "./check-names.ts";
+import { checkPcodeFormat } from "./check-pcode-format.ts";
+import { checkPcodeRefs } from "./check-pcode-refs.ts";
+import { checkPolygon } from "./check-polygon.ts";
+import { checkTopology } from "./check-topology.ts";
+import { checkVersions } from "./check-versions.ts";
+import type { Check, HierarchyCheck } from "./types.ts";
 
 /**
  * Ordered list of all registered validation checks.

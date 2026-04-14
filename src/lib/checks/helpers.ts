@@ -1,4 +1,4 @@
-import type { AsyncDuckDBConnection } from '@duckdb/duckdb-wasm';
+import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
 
 /**
  * Describes the four name columns for a single admin level.

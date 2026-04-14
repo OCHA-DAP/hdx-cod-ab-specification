@@ -1,7 +1,7 @@
-import type { AsyncDuckDB, AsyncDuckDBConnection } from '@duckdb/duckdb-wasm';
-import { checks, hierarchyChecks } from './checks/registry.ts';
-import type { CheckResult, LayerContext } from './checks/types.ts';
-import type { PreviewData } from './db/loader.ts';
+import type { AsyncDuckDB, AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
+import { checks, hierarchyChecks } from "./checks/registry.ts";
+import type { CheckResult, LayerContext } from "./checks/types.ts";
+import type { PreviewData } from "./db/loader.ts";
 import {
   buildPreviewData,
   loadLayerAsTable,
@@ -9,7 +9,7 @@ import {
   listSpatialLayers,
   loadSpatialLayer,
   registerShapefileFiles,
-} from './db/loader.ts';
+} from "./db/loader.ts";
 
 export interface FileResult {
   fileName: string;
@@ -24,10 +24,10 @@ export interface DatasetResult {
 }
 
 // Infer the layer type from the layer name for appliesTo filtering.
-function inferLayerType(layerName: string): 'admin' | 'lines' | 'points' | null {
-  if (/_adm(in)?\d/i.test(layerName)) return 'admin';
-  if (/_(adminlines?|lines?|lin)\b/i.test(layerName)) return 'lines';
-  if (/_(adminpoints?|points?|pts?)\b/i.test(layerName)) return 'points';
+function inferLayerType(layerName: string): "admin" | "lines" | "points" | null {
+  if (/_adm(in)?\d/i.test(layerName)) return "admin";
+  if (/_(adminlines?|lines?|lin)\b/i.test(layerName)) return "lines";
+  if (/_(adminpoints?|points?|pts?)\b/i.test(layerName)) return "points";
   return null;
 }
 
@@ -49,7 +49,7 @@ async function runChecksAndPreview(
   const checkResults: Record<string, CheckResult> = {};
   for (const check of checks) {
     if (
-      !check.appliesTo.includes('all') &&
+      !check.appliesTo.includes("all") &&
       (layerType === null || !check.appliesTo.includes(layerType))
     ) {
       continue;
@@ -60,7 +60,7 @@ async function runChecksAndPreview(
   return { checks: checkResults, preview };
 }
 
-const SHP_EXTS = new Set(['.shp', '.dbf', '.shx', '.prj', '.cpg']);
+const SHP_EXTS = new Set([".shp", ".dbf", ".shx", ".prj", ".cpg"]);
 
 /**
  * Groups files by format:
@@ -79,14 +79,14 @@ function groupFiles(files: File[]): {
   for (const file of files) {
     const fullPath =
       (file as File & { webkitRelativePath: string }).webkitRelativePath || file.name;
-    const dotIdx = fullPath.lastIndexOf('.');
+    const dotIdx = fullPath.lastIndexOf(".");
     if (dotIdx !== -1) {
       const ext = fullPath.slice(dotIdx).toLowerCase();
       if (SHP_EXTS.has(ext)) {
         const stem = fullPath.slice(0, dotIdx).toLowerCase();
         if (!shpGroups.has(stem)) shpGroups.set(stem, []);
         shpGroups.get(stem)!.push(file);
-        if (ext === '.shp') shpStems.add(stem);
+        if (ext === ".shp") shpStems.add(stem);
         continue;
       }
     }
@@ -144,7 +144,7 @@ async function processLayers(filePath: string, conn: AsyncDuckDBConnection): Pro
       fileResult.checks = outcome.checks;
       fileResult.preview = outcome.preview;
     } catch (e) {
-      fileResult.loadError = '[load] ' + (e instanceof Error ? e.message : String(e));
+      fileResult.loadError = "[load] " + (e instanceof Error ? e.message : String(e));
     }
     results.push(fileResult);
   }
@@ -172,16 +172,14 @@ export async function runValidation(
   //   single-layer format → "<filePath>" (layerName derived from stem)
   function trackAdminLayer(fileResult: FileResult) {
     if (fileResult.loadError) return;
-    const sep = fileResult.fileName.indexOf('::');
+    const sep = fileResult.fileName.indexOf("::");
     const filePath = sep === -1 ? fileResult.fileName : fileResult.fileName.slice(0, sep);
     const layerName =
-      sep === -1
-        ? fileResult.fileName.replace(/\.[^.]+$/, '')
-        : fileResult.fileName.slice(sep + 2);
+      sep === -1 ? fileResult.fileName.replace(/\.[^.]+$/, "") : fileResult.fileName.slice(sep + 2);
     const level = inferAdminLevel(layerName);
     if (level === null || adminLayers.has(level)) return;
     adminLayers.set(level, {
-      tableName: '', // set during the hierarchy phase
+      tableName: "", // set during the hierarchy phase
       columns: [], // set during the hierarchy phase via loadLayerAsTable
       adminLevel: level,
       layerName,
@@ -197,9 +195,9 @@ export async function runValidation(
   // ST_Read so any GDAL-supported format works automatically.
 
   for (const file of individualFiles) {
-    const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
 
-    if (ext === 'parquet') {
+    if (ext === "parquet") {
       const fileResult: FileResult = {
         fileName: file.name,
         loadError: null,
@@ -208,7 +206,7 @@ export async function runValidation(
       };
       try {
         const { columns } = await loadParquet(file, db, conn);
-        const outcome = await runChecksAndPreview(conn, columns, file.name.replace(/\.[^.]+$/, ''));
+        const outcome = await runChecksAndPreview(conn, columns, file.name.replace(/\.[^.]+$/, ""));
         fileResult.checks = outcome.checks;
         fileResult.preview = outcome.preview;
       } catch (e) {
@@ -236,7 +234,7 @@ export async function runValidation(
     try {
       shpPath = await registerShapefileFiles(shpFiles, db);
     } catch (e) {
-      const name = shpFiles.find((f) => f.name.toLowerCase().endsWith('.shp'))?.name ?? 'shapefile';
+      const name = shpFiles.find((f) => f.name.toLowerCase().endsWith(".shp"))?.name ?? "shapefile";
       results.push({
         fileName: name,
         loadError: e instanceof Error ? e.message : String(e),
@@ -268,30 +266,38 @@ export async function runValidation(
     const parentColumns = await loadLayerAsTable(
       parentInfo.filePath,
       parentInfo.layerName,
-      'parent_layer',
+      "parent_layer",
       conn,
     );
     const childColumns = await loadLayerAsTable(
       childInfo.filePath,
       childInfo.layerName,
-      'child_layer',
+      "child_layer",
       conn,
     );
 
-    const parentCtx: LayerContext = { ...parentInfo, tableName: 'parent_layer', columns: parentColumns };
-    const childCtx: LayerContext = { ...childInfo, tableName: 'child_layer', columns: childColumns };
+    const parentCtx: LayerContext = {
+      ...parentInfo,
+      tableName: "parent_layer",
+      columns: parentColumns,
+    };
+    const childCtx: LayerContext = {
+      ...childInfo,
+      tableName: "child_layer",
+      columns: childColumns,
+    };
 
     const childFileResult = results.find((r) => r.fileName === childCtx.fileName);
 
     for (const check of hierarchyChecks) {
-      if (check.appliesToPair === 'adjacent-admin') {
+      if (check.appliesToPair === "adjacent-admin") {
         const checkResult = await check.run(conn, parentCtx, childCtx);
         if (childFileResult) childFileResult.checks[check.name] = checkResult;
       }
     }
 
-    await conn.query('DROP TABLE IF EXISTS parent_layer');
-    await conn.query('DROP TABLE IF EXISTS child_layer');
+    await conn.query("DROP TABLE IF EXISTS parent_layer");
+    await conn.query("DROP TABLE IF EXISTS child_layer");
   }
 
   return { files: results };

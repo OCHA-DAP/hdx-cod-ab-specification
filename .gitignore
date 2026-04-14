@@ -5,8 +5,8 @@ node_modules
 .vercel
 .netlify
 .wrangler
-/.svelte-kit
-/build
+/.astro
+/dist
 
 # OS
 .DS_Store
@@ -18,11 +18,10 @@ Thumbs.db
 !.env.example
 !.env.test
 
-# Vite
-vite.config.js.timestamp-*
-vite.config.ts.timestamp-*
-
 # User files
 CLAUDE.md
 examples/
 /boundaries/
+
+.claude
+.venv

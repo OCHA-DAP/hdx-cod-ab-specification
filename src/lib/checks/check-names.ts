@@ -1,6 +1,6 @@
-import type { AsyncDuckDBConnection } from '@duckdb/duckdb-wasm';
-import { getNameColumnGroups } from './helpers.ts';
-import type { Check, CheckResult } from './types.ts';
+import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
+import { getNameColumnGroups } from "./helpers.ts";
+import type { Check, CheckResult } from "./types.ts";
 
 // Matches any bad whitespace: leading/trailing space, consecutive spaces, or non-space whitespace.
 const BAD_WS_RE = String.raw`^\s|\s$|  |[\t\n\r\f\v]`;
@@ -18,7 +18,7 @@ async function run(conn: AsyncDuckDBConnection, columns: string[]): Promise<Chec
   const groups = getNameColumnGroups(columns);
 
   if (groups.length === 0) {
-    info.push('No `adm{L}_name` columns found — name checks skipped.');
+    info.push("No `adm{L}_name` columns found — name checks skipped.");
     return { passed: true, violations, warnings, info };
   }
 
@@ -161,7 +161,7 @@ FROM data
       );
 
       if (badWsCount > 0) {
-        const sample = badWsSample.map((v) => `"${v}"`).join(', ');
+        const sample = badWsSample.map((v) => `"${v}"`).join(", ");
         violations.push(
           `\`${col}\` has ${badWsCount} value(s) with extraneous whitespace ` +
             `(leading/trailing space, consecutive spaces, or tab/newline). ` +
@@ -169,21 +169,21 @@ FROM data
         );
       }
       if (allCapsCount > 0) {
-        const sample = allCapsSample.map((v) => `"${v}"`).join(', ');
+        const sample = allCapsSample.map((v) => `"${v}"`).join(", ");
         violations.push(
           `\`${col}\` has ${allCapsCount} ALL CAPS value(s). ` +
             `Names MUST NOT be fully uppercased. Examples: ${sample}.`,
         );
       }
       if (allLowerCount > 0) {
-        const sample = allLowerSample.map((v) => `"${v}"`).join(', ');
+        const sample = allLowerSample.map((v) => `"${v}"`).join(", ");
         violations.push(
           `\`${col}\` has ${allLowerCount} all-lowercase value(s). ` +
             `Names MUST NOT be fully lowercased. Examples: ${sample}.`,
         );
       }
       if (noAlphaCount > 0) {
-        const sample = noAlphaSample.map((v) => `"${v}"`).join(', ');
+        const sample = noAlphaSample.map((v) => `"${v}"`).join(", ");
         violations.push(
           `\`${col}\` has ${noAlphaCount} value(s) containing no alphabetic characters. ` +
             `Every name MUST contain at least one letter. Examples: ${sample}.`,
@@ -251,10 +251,12 @@ FROM dupes
           .map((entry) => {
             const e = entry as Record<string, unknown>;
             const nm = String(e.name);
-            const pcodes = Array.from((e.pcodes as Iterable<unknown>) ?? []).map(String).join(', ');
+            const pcodes = Array.from((e.pcodes as Iterable<unknown>) ?? [])
+              .map(String)
+              .join(", ");
             return `"${nm}" (${pcodes})`;
           })
-          .join(', ');
+          .join(", ");
         violations.push(
           `\`${col}\`: ${dupeGroups} name(s) are shared by more than one sibling within the ` +
             `same \`${parentPcode}\`. Each name MUST identify exactly one unit within its parent. ` +
@@ -284,7 +286,7 @@ FROM (
         const sample = Array.from((conRow.inconsistent_sample as Iterable<unknown>) ?? [])
           .map(String)
           .map((v) => `"${v}"`)
-          .join(', ');
+          .join(", ");
         violations.push(
           `\`${col}\`: ${inconsistentCount} \`${ownPcode}\` value(s) appear with more than one ` +
             `name. A unit MUST always appear with the same name on every row. ` +
@@ -295,17 +297,17 @@ FROM (
   }
 
   info.push(
-    'Not checked: title-case particle detection, consistent abbreviated/full forms, ' +
-      'consistent script and encoding (require language-specific rules or external data).',
+    "Not checked: title-case particle detection, consistent abbreviated/full forms, " +
+      "consistent script and encoding (require language-specific rules or external data).",
   );
 
   return { passed: violations.length === 0, violations, warnings, info };
 }
 
 export const checkNames: Check = {
-  name: 'check_names',
-  label: 'Name Columns',
-  specSection: 'Names',
-  appliesTo: ['admin'],
+  name: "check_names",
+  label: "Name Columns",
+  specSection: "Names",
+  appliesTo: ["admin"],
   run,
 };

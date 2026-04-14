@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { unzip } from 'fflate';
+  import { unzip } from "fflate";
 
   let {
     files = $bindable<File[]>([]),
@@ -14,26 +14,26 @@
   // it is still accepted by the file picker via the accept attribute below.
   const SINGLE_EXTS = [
     // Native DuckDB
-    '.parquet',
+    ".parquet",
     // GDAL / ST_Read — single-file vector formats
-    '.geojson',
-    '.geojsonl',
-    '.geojsonseq',
-    '.gpkg',
-    '.fgb',
-    '.kml',
-    '.kmz',
-    '.gml',
-    '.gpx',
-    '.sqlite',
+    ".geojson",
+    ".geojsonl",
+    ".geojsonseq",
+    ".gpkg",
+    ".fgb",
+    ".kml",
+    ".kmz",
+    ".gml",
+    ".gpx",
+    ".sqlite",
   ];
-  const SHP_EXTS = ['.shp', '.dbf', '.shx', '.prj', '.cpg'];
+  const SHP_EXTS = [".shp", ".dbf", ".shx", ".prj", ".cpg"];
 
   let dragging = $state(false);
   let hasGDB = $state(false);
 
   function isGDB(file: File): boolean {
-    const relPath = (file as File & { webkitRelativePath: string }).webkitRelativePath || '';
+    const relPath = (file as File & { webkitRelativePath: string }).webkitRelativePath || "";
     return /\.gdb\//i.test(relPath);
   }
 
@@ -58,20 +58,20 @@
     const shpStems = new Map<string, string>(); // eslint-disable-line svelte/prefer-svelte-reactivity -- non-reactive local utility variable
     const singles: string[] = [];
     for (const f of fileList) {
-      const relPath = (f as File & { webkitRelativePath: string }).webkitRelativePath || '';
+      const relPath = (f as File & { webkitRelativePath: string }).webkitRelativePath || "";
       const lname = f.name.toLowerCase();
       if (SHP_EXTS.some((ext) => lname.endsWith(ext))) {
         const fullPath = relPath || f.name;
-        const stem = fullPath.slice(0, fullPath.lastIndexOf('.')).toLowerCase();
+        const stem = fullPath.slice(0, fullPath.lastIndexOf(".")).toLowerCase();
         // Prefer the actual .shp filename as the display name
-        if (lname.endsWith('.shp') || !shpStems.has(stem)) {
-          shpStems.set(stem, lname.endsWith('.shp') ? f.name : stem.split('/').pop()! + '.shp');
+        if (lname.endsWith(".shp") || !shpStems.has(stem)) {
+          shpStems.set(stem, lname.endsWith(".shp") ? f.name : stem.split("/").pop()! + ".shp");
         }
         continue;
       }
       singles.push(f.name);
     }
-    return [...singles, ...Array.from(shpStems.values()).sort()].join(', ');
+    return [...singles, ...Array.from(shpStems.values()).sort()].join(", ");
   }
 
   async function extractZip(file: File): Promise<File[]> {
@@ -82,10 +82,10 @@
     const extracted: File[] = [];
     for (const [path, bytes] of Object.entries(entries)) {
       // Skip Mac metadata directories and empty directory entries
-      if (path.startsWith('__MACOSX/') || bytes.length === 0) continue;
-      const name = path.split('/').pop()!;
+      if (path.startsWith("__MACOSX/") || bytes.length === 0) continue;
+      const name = path.split("/").pop()!;
       const inner = new File([bytes.slice()], name);
-      Object.defineProperty(inner, 'webkitRelativePath', {
+      Object.defineProperty(inner, "webkitRelativePath", {
         value: path,
         writable: false,
         configurable: true,
@@ -99,7 +99,7 @@
   async function expandZips(fileList: File[]): Promise<File[]> {
     const result: File[] = [];
     for (const file of fileList) {
-      if (file.name.toLowerCase().endsWith('.zip')) {
+      if (file.name.toLowerCase().endsWith(".zip")) {
         result.push(...(await extractZip(file)));
       } else {
         result.push(file);
@@ -124,7 +124,7 @@
     });
   }
 
-  async function readEntry(entry: FileSystemEntry, basePath = ''): Promise<File[]> {
+  async function readEntry(entry: FileSystemEntry, basePath = ""): Promise<File[]> {
     if (entry.isFile) {
       // Get the File object from the entry, then immediately read its bytes.
       // We must read eagerly here: `new File([f], ...)` only holds a lazy
@@ -140,7 +140,7 @@
         type: f.type,
         lastModified: f.lastModified,
       });
-      Object.defineProperty(located, 'webkitRelativePath', {
+      Object.defineProperty(located, "webkitRelativePath", {
         value: path,
         writable: false,
         configurable: true,
@@ -183,7 +183,7 @@
       const allFiles = (await Promise.all(entries.map((e) => readEntry(e)))).flat();
       files = filterAndSort(await expandZips(allFiles));
     } catch (e) {
-      console.error('Failed to read dropped files:', e);
+      console.error("Failed to read dropped files:", e);
     }
   }
 
@@ -207,7 +207,7 @@
   <label class="browse-label">
     <input
       type="file"
-      accept={[...SINGLE_EXTS, '.json', ...SHP_EXTS, '.zip'].join(',')}
+      accept={[...SINGLE_EXTS, ".json", ...SHP_EXTS, ".zip"].join(",")}
       multiple
       onchange={handleBrowse}
       {disabled}
@@ -219,7 +219,7 @@
   {#if files.length > 0}
     <p class="file-list">
       {files.length}
-      {files.length === 1 ? 'file' : 'files'} selected:
+      {files.length === 1 ? "file" : "files"} selected:
       <span class="filenames">{summarize(files)}</span>
     </p>
   {/if}

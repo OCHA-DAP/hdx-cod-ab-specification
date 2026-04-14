@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { FileResult } from '$lib/runner';
-  import MapPreview from './MapPreview.svelte';
-  import MessageList from './MessageList.svelte';
+  import type { FileResult } from "$lib/runner";
+  import MapPreview from "./MapPreview.svelte";
+  import MessageList from "./MessageList.svelte";
 
   type CheckMeta = { name: string; label: string; specSection: string };
   let { fileResult, checks }: { fileResult: FileResult; checks: CheckMeta[] } = $props();
@@ -20,7 +20,7 @@
 
   {#if fileResult.preview}
     <button class="map-toggle" onclick={() => (mapOpen = !mapOpen)}>
-      {mapOpen ? '▼ Hide map' : '▶ Show map'}
+      {mapOpen ? "▼ Hide map" : "▶ Show map"}
     </button>
     {#if mapOpen}
       <MapPreview preview={fileResult.preview} {overlays} />
@@ -35,7 +35,7 @@
         {@const r = fileResult.checks[check.name]}
         {#if r}
           <span class="badge" class:pass={r.passed} class:fail={!r.passed}>
-            {check.label}: {r.passed ? 'Pass' : 'Fail'}
+            {check.label}: {r.passed ? "Pass" : "Fail"}
           </span>
         {/if}
       {/each}

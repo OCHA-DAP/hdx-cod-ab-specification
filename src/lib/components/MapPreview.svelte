@@ -1,11 +1,11 @@
 <script lang="ts">
-  import type { PreviewData } from '$lib/db/loader';
-  import type { Map as MaplibreMap } from 'maplibre-gl';
-  import 'maplibre-gl/dist/maplibre-gl.css';
-  import { onDestroy, onMount } from 'svelte';
-  import IssuesTable from './IssuesTable.svelte';
-  import { setupHoverTooltip } from './map-interactions';
-  import { featureBounds, parseOverlayFeatures } from './map-utils';
+  import type { PreviewData } from "$lib/db/loader";
+  import type { Map as MaplibreMap } from "maplibre-gl";
+  import "maplibre-gl/dist/maplibre-gl.css";
+  import { onDestroy, onMount } from "svelte";
+  import IssuesTable from "./IssuesTable.svelte";
+  import { setupHoverTooltip } from "./map-interactions";
+  import { featureBounds, parseOverlayFeatures } from "./map-utils";
 
   let { preview, overlays = [] }: { preview: PreviewData; overlays?: string[] } = $props();
 
@@ -38,7 +38,7 @@
 
     // Dynamic import keeps maplibre-gl's bundled internals out of Svelte 5's
     // compilation scope, avoiding a $$props variable name conflict.
-    const maplibregl = await import('maplibre-gl');
+    const maplibregl = await import("maplibre-gl");
 
     map = new maplibregl.Map({
       container,
@@ -47,9 +47,9 @@
         sources: {},
         layers: [
           {
-            id: 'background',
-            type: 'background',
-            paint: { 'background-color': '#ffffff' },
+            id: "background",
+            type: "background",
+            paint: { "background-color": "#ffffff" },
           },
         ],
       },
@@ -58,97 +58,97 @@
       attributionControl: false,
     });
 
-    map.on('load', () => {
+    map.on("load", () => {
       if (!map) return;
 
-      map.addSource('preview', { type: 'geojson', data: blobUrl! });
+      map.addSource("preview", { type: "geojson", data: blobUrl! });
 
       map.addLayer({
-        id: 'preview-fill',
-        type: 'fill',
-        source: 'preview',
-        filter: ['match', ['geometry-type'], ['Polygon', 'MultiPolygon'], true, false],
-        paint: { 'fill-color': '#3b82f6', 'fill-opacity': 0.25 },
+        id: "preview-fill",
+        type: "fill",
+        source: "preview",
+        filter: ["match", ["geometry-type"], ["Polygon", "MultiPolygon"], true, false],
+        paint: { "fill-color": "#3b82f6", "fill-opacity": 0.25 },
       });
 
       map.addLayer({
-        id: 'preview-line',
-        type: 'line',
-        source: 'preview',
+        id: "preview-line",
+        type: "line",
+        source: "preview",
         filter: [
-          'match',
-          ['geometry-type'],
-          ['Polygon', 'MultiPolygon', 'LineString', 'MultiLineString'],
+          "match",
+          ["geometry-type"],
+          ["Polygon", "MultiPolygon", "LineString", "MultiLineString"],
           true,
           false,
         ],
-        paint: { 'line-color': '#1d4ed8', 'line-width': 1 },
+        paint: { "line-color": "#1d4ed8", "line-width": 1 },
       });
 
       map.addLayer({
-        id: 'preview-circle',
-        type: 'circle',
-        source: 'preview',
-        filter: ['match', ['geometry-type'], ['Point', 'MultiPoint'], true, false],
-        paint: { 'circle-color': '#1d4ed8', 'circle-radius': 4 },
+        id: "preview-circle",
+        type: "circle",
+        source: "preview",
+        filter: ["match", ["geometry-type"], ["Point", "MultiPoint"], true, false],
+        paint: { "circle-color": "#1d4ed8", "circle-radius": 4 },
       });
 
       // Render topology overlays (overlaps = red, gaps = yellow).
       if (issueFeatures.length > 0) {
-        const fc = { type: 'FeatureCollection', features: issueFeatures };
-        map.addSource('overlays', {
-          type: 'geojson',
+        const fc = { type: "FeatureCollection", features: issueFeatures };
+        map.addSource("overlays", {
+          type: "geojson",
           data: fc as any, // eslint-disable-line @typescript-eslint/no-explicit-any
           tolerance: 0,
         });
 
         map.addLayer({
-          id: 'overlays-fill',
-          type: 'fill',
-          source: 'overlays',
-          filter: ['match', ['geometry-type'], ['Polygon', 'MultiPolygon'], true, false],
+          id: "overlays-fill",
+          type: "fill",
+          source: "overlays",
+          filter: ["match", ["geometry-type"], ["Polygon", "MultiPolygon"], true, false],
           paint: {
-            'fill-color': [
-              'match',
-              ['get', 'issueType'],
-              'overlap',
-              '#ff0000',
-              'gap',
-              '#ffee00',
-              'boundary-cross',
-              '#f97316',
-              '#cc00ff',
+            "fill-color": [
+              "match",
+              ["get", "issueType"],
+              "overlap",
+              "#ff0000",
+              "gap",
+              "#ffee00",
+              "boundary-cross",
+              "#f97316",
+              "#cc00ff",
             ],
-            'fill-opacity': 0.25,
+            "fill-opacity": 0.25,
           },
         });
 
         // Line layer covers all geometry types (Polygon borders + bare LineStrings
         // from degenerate intersections) and stays thick at every zoom level.
         map.addLayer({
-          id: 'overlays-line',
-          type: 'line',
-          source: 'overlays',
+          id: "overlays-line",
+          type: "line",
+          source: "overlays",
           filter: [
-            'match',
-            ['geometry-type'],
-            ['Polygon', 'MultiPolygon', 'LineString', 'MultiLineString'],
+            "match",
+            ["geometry-type"],
+            ["Polygon", "MultiPolygon", "LineString", "MultiLineString"],
             true,
             false,
           ],
           paint: {
-            'line-color': [
-              'match',
-              ['get', 'issueType'],
-              'overlap',
-              '#ff0000',
-              'gap',
-              '#ffee00',
-              'boundary-cross',
-              '#f97316',
-              '#cc00ff',
+            "line-color": [
+              "match",
+              ["get", "issueType"],
+              "overlap",
+              "#ff0000",
+              "gap",
+              "#ffee00",
+              "boundary-cross",
+              "#f97316",
+              "#cc00ff",
             ],
-            'line-width': ['interpolate', ['linear'], ['zoom'], 2, 4, 8, 3, 14, 3],
+            "line-width": ["interpolate", ["linear"], ["zoom"], 2, 4, 8, 3, 14, 3],
           },
         });
       }
@@ -164,7 +164,7 @@
         );
       }
 
-      setupHoverTooltip(map, ['preview-fill', 'preview-line', 'preview-circle'], () => showTooltip);
+      setupHoverTooltip(map, ["preview-fill", "preview-line", "preview-circle"], () => showTooltip);
     });
   });
 

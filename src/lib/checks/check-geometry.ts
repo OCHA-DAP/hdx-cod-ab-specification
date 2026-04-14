@@ -1,13 +1,13 @@
-import type { AsyncDuckDBConnection } from '@duckdb/duckdb-wasm';
-import type { Check, CheckResult } from './types.ts';
+import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
+import type { Check, CheckResult } from "./types.ts";
 
 export async function findGeomColumn(conn: AsyncDuckDBConnection): Promise<string | null> {
-  const desc = await conn.query('DESCRIBE data');
+  const desc = await conn.query("DESCRIBE data");
   const cols = desc.toArray() as Array<{
     column_name: string;
     column_type: string;
   }>;
-  return cols.find((r) => r.column_type === 'GEOMETRY')?.column_name ?? null;
+  return cols.find((r) => r.column_type === "GEOMETRY")?.column_name ?? null;
 }
 
 async function run(conn: AsyncDuckDBConnection, _columns: string[]): Promise<CheckResult> {
@@ -17,7 +17,7 @@ async function run(conn: AsyncDuckDBConnection, _columns: string[]): Promise<Che
 
   const geomCol = await findGeomColumn(conn);
   if (!geomCol) {
-    info.push('No GEOMETRY column found — geometry checks skipped.');
+    info.push("No GEOMETRY column found — geometry checks skipped.");
     return { passed: true, violations, warnings, info };
   }
 
@@ -57,7 +57,7 @@ async function run(conn: AsyncDuckDBConnection, _columns: string[]): Promise<Che
   if (invalidCount > 0) {
     violations.push(
       `${invalidCount} geometry(ies) are invalid (e.g. self-intersections, unclosed rings). ` +
-        'All geometries MUST be valid per the OGC Simple Features specification.',
+        "All geometries MUST be valid per the OGC Simple Features specification.",
     );
   }
 
@@ -82,11 +82,11 @@ async function run(conn: AsyncDuckDBConnection, _columns: string[]): Promise<Che
     if (xmin < -180 || xmax > 180 || ymin < -90 || ymax > 90) {
       violations.push(
         `Coordinate bounds (x: [${xmin.toFixed(4)}, ${xmax.toFixed(4)}], y: [${ymin.toFixed(4)}, ${ymax.toFixed(4)}]) ` +
-          'exceed WGS 84 ranges (x: [-180, 180], y: [-90, 90]). ' +
-          'All datasets MUST use EPSG:4326 (WGS 84).',
+          "exceed WGS 84 ranges (x: [-180, 180], y: [-90, 90]). " +
+          "All datasets MUST use EPSG:4326 (WGS 84).",
       );
     } else {
-      info.push('Coordinate bounds are consistent with EPSG:4326 (WGS 84).');
+      info.push("Coordinate bounds are consistent with EPSG:4326 (WGS 84).");
     }
   }
 
@@ -94,9 +94,9 @@ async function run(conn: AsyncDuckDBConnection, _columns: string[]): Promise<Che
 }
 
 export const checkGeometry: Check = {
-  name: 'check_geometry',
-  label: 'Geometry',
-  specSection: 'Geometry',
-  appliesTo: ['all'],
+  name: "check_geometry",
+  label: "Geometry",
+  specSection: "Geometry",
+  appliesTo: ["all"],
   run,
 };

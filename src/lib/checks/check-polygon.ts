@@ -1,6 +1,6 @@
-import type { AsyncDuckDBConnection } from '@duckdb/duckdb-wasm';
-import { findGeomColumn } from './check-geometry.ts';
-import type { Check, CheckResult } from './types.ts';
+import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
+import { findGeomColumn } from "./check-geometry.ts";
+import type { Check, CheckResult } from "./types.ts";
 
 async function run(conn: AsyncDuckDBConnection, _columns: string[]): Promise<CheckResult> {
   const violations: string[] = [];
@@ -23,10 +23,10 @@ async function run(conn: AsyncDuckDBConnection, _columns: string[]): Promise<Che
   `);
   const typeCounts = typeResult.toArray() as Array<{ geom_type: string; cnt: bigint }>;
   const badTypes = typeCounts.filter(
-    (r) => r.geom_type !== 'POLYGON' && r.geom_type !== 'MULTIPOLYGON',
+    (r) => r.geom_type !== "POLYGON" && r.geom_type !== "MULTIPOLYGON",
   );
   if (badTypes.length > 0) {
-    const listed = badTypes.map((r) => `${r.geom_type} (${r.cnt})`).join(', ');
+    const listed = badTypes.map((r) => `${r.geom_type} (${r.cnt})`).join(", ");
     violations.push(
       `Non-polygon geometry types found: ${listed}. All geometries MUST be of type Polygon or MultiPolygon.`,
     );
@@ -36,9 +36,9 @@ async function run(conn: AsyncDuckDBConnection, _columns: string[]): Promise<Che
 }
 
 export const checkPolygon: Check = {
-  name: 'check_polygon',
-  label: 'Polygon',
-  specSection: 'Geometry',
-  appliesTo: ['admin'],
+  name: "check_polygon",
+  label: "Polygon",
+  specSection: "Geometry",
+  appliesTo: ["admin"],
   run,
 };

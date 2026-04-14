@@ -1,41 +1,40 @@
 <script lang="ts">
-  import { base } from '$app/paths';
-  import FileUpload from '$lib/components/FileUpload.svelte';
-  import ResultsReport from '$lib/components/ResultsReport.svelte';
-  import { duckdbState } from '$lib/db/duckdb.svelte';
-  import type { DatasetResult } from '$lib/runner';
-  import { runValidation } from '$lib/runner';
-  import { marked } from 'marked';
-  import { onMount, untrack } from 'svelte';
-  import overviewMd from '../../specs/boundaries/README.md?raw';
+  import FileUpload from "$lib/components/FileUpload.svelte";
+  import ResultsReport from "$lib/components/ResultsReport.svelte";
+  import { duckdbState, initDuckDB } from "$lib/db/duckdb.svelte";
+  import type { DatasetResult } from "$lib/runner";
+  import { runValidation } from "$lib/runner";
+  import { marked } from "marked";
+  import { onMount, untrack } from "svelte";
+  import overviewMd from "../../../specs/boundaries/README.md?raw";
 
   // Eagerly load all boundary source files. Adding/removing/reordering only
   // requires editing the `sources` list in specs/boundaries/README.md frontmatter.
-  const sourceModules = import.meta.glob('../../specs/boundaries/*.md', {
-    query: '?raw',
-    import: 'default',
+  const sourceModules = import.meta.glob("../../../specs/boundaries/*.md", {
+    query: "?raw",
+    import: "default",
     eager: true,
   }) as Record<string, string>;
 
   function stripFrontmatter(md: string): string {
-    if (!md.startsWith('---')) return md;
-    const end = md.indexOf('\n---', 3);
+    if (!md.startsWith("---")) return md;
+    const end = md.indexOf("\n---", 3);
     return end === -1 ? md : md.slice(end + 4);
   }
 
   function parseSources(md: string): string[] {
-    const fm = md.match(/^---\n([\s\S]*?)\n---/)?.[1] ?? '';
+    const fm = md.match(/^---\n([\s\S]*?)\n---/)?.[1] ?? "";
     return [...fm.matchAll(/^\s+-\s+(.+)$/gm)].map((m) => m[1].trim());
   }
 
   const specTabs = [
-    { id: 'overview', label: 'Overview', md: overviewMd },
+    { id: "overview", label: "Overview", md: overviewMd },
     ...parseSources(overviewMd).map((srcPath) => {
-      const filename = srcPath.split('/').pop()!;
-      const id = filename.replace('.md', '');
+      const filename = srcPath.split("/").pop()!;
+      const id = filename.replace(".md", "");
       const label = id.charAt(0).toUpperCase() + id.slice(1);
-      const resolvedPath = srcPath.includes('/') ? srcPath : `specs/boundaries/${srcPath}`;
-      const md = sourceModules[`../../${resolvedPath}`] ?? '';
+      const resolvedPath = srcPath.includes("/") ? srcPath : `specs/boundaries/${srcPath}`;
+      const md = sourceModules[`../../../${resolvedPath}`] ?? "";
       return { id, label, md };
     }),
   ];
@@ -44,63 +43,55 @@
   let running = $state(false);
   let result = $state<DatasetResult | null>(null);
   let runError = $state<string | null>(null);
-  let showSpec = $state(false);
-  let activeTab = $state('overview');
-  let copyState = $state<'idle' | 'copying' | 'copied'>('idle');
+  let showSpec = $state(true);
+  let activeTab = $state("overview");
+  let copyState = $state<"idle" | "copying" | "copied">("idle");
 
   async function copyPrompt() {
-    copyState = 'copying';
+    copyState = "copying";
     try {
-      const res = await fetch(`${base}/prompt`);
+      const res = await fetch(`${import.meta.env.BASE_URL}prompt`);
       const text = await res.text();
       await navigator.clipboard.writeText(text);
-      copyState = 'copied';
-      setTimeout(() => (copyState = 'idle'), 2000);
+      copyState = "copied";
+      setTimeout(() => (copyState = "idle"), 2000);
     } catch {
-      copyState = 'idle';
+      copyState = "idle";
     }
   }
 
   const validTabIds = new Set(specTabs.map((t) => t.id));
 
-  function parseHash(hash: string): { show: boolean; tab: string } {
-    const h = hash.replace(/^#/, '');
-    if (h === 'spec') return { show: true, tab: 'overview' };
-    if (h.startsWith('spec-')) {
-      const tab = h.slice(5);
-      return { show: true, tab: validTabIds.has(tab) ? tab : 'overview' };
-    }
-    return { show: false, tab: 'overview' };
+  function parseHash(hash: string): string {
+    const h = hash.replace(/^#/, "");
+    return validTabIds.has(h) ? h : "overview";
   }
 
-  function buildHash(show: boolean, tab: string): string {
-    if (!show) return '';
-    return tab === 'overview' ? '#spec' : `#spec-${tab}`;
+  function buildHash(tab: string): string {
+    return tab === "overview" ? "" : `#${tab}`;
   }
 
   onMount(() => {
-    const { show, tab } = parseHash(window.location.hash);
-    showSpec = show;
-    activeTab = tab;
+    initDuckDB();
+
+    activeTab = parseHash(window.location.hash);
 
     function onHashChange() {
-      const { show: s, tab: t } = parseHash(window.location.hash);
-      showSpec = s;
-      activeTab = t;
+      activeTab = parseHash(window.location.hash);
     }
-    window.addEventListener('hashchange', onHashChange);
-    return () => window.removeEventListener('hashchange', onHashChange);
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
   });
 
   $effect(() => {
-    const hash = buildHash(showSpec, activeTab);
-    if (typeof window !== 'undefined' && window.location.hash !== hash) {
-      history.replaceState(null, '', hash || window.location.pathname);
+    const hash = buildHash(activeTab);
+    if (typeof window !== "undefined" && window.location.hash !== hash) {
+      history.replaceState(null, "", hash || window.location.pathname);
     }
   });
 
   let activeTabHtml = $derived(
-    marked(stripFrontmatter(specTabs.find((t) => t.id === activeTab)?.md ?? '')) as string,
+    marked(stripFrontmatter(specTabs.find((t) => t.id === activeTab)?.md ?? "")) as string,
   );
 
   $effect(() => {
@@ -139,9 +130,9 @@
       To validate with an LLM: <button
         class="copy-prompt-button"
         onclick={copyPrompt}
-        disabled={copyState !== 'idle'}
+        disabled={copyState !== "idle"}
       >
-        {copyState === 'copied' ? 'Copied!' : copyState === 'copying' ? 'Copying…' : 'Copy prompt'}
+        {copyState === "copied" ? "Copied!" : copyState === "copying" ? "Copying…" : "Copy prompt"}
       </button> then paste it into your LLM of choice.
     </p>
     <button
@@ -149,10 +140,9 @@
       class:active={showSpec}
       onclick={() => {
         showSpec = !showSpec;
-        history.pushState(null, '', buildHash(showSpec, activeTab) || window.location.pathname);
       }}
     >
-      {showSpec ? 'Hide specification' : 'View specification'}
+      {showSpec ? "Hide specification" : "View specification"}
     </button>
   </header>
 
@@ -165,7 +155,7 @@
             class:active={activeTab === tab.id}
             onclick={(e) => {
               activeTab = tab.id;
-              history.pushState(null, '', buildHash(showSpec, tab.id));
+              history.pushState(null, "", buildHash(tab.id));
               (e.currentTarget as HTMLButtonElement).blur();
             }}
           >

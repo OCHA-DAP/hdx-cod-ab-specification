@@ -1,4 +1,4 @@
-import type { AsyncDuckDBConnection } from '@duckdb/duckdb-wasm';
+import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
 
 export interface CheckResult {
   passed: boolean;
@@ -13,7 +13,7 @@ export interface Check {
   name: string; // machine name, e.g. "check_versions"
   label: string; // human-readable label, e.g. "Version"
   specSection: string; // spec reference, e.g. "Versions"
-  appliesTo: ('all' | 'admin' | 'lines' | 'points')[];
+  appliesTo: ("all" | "admin" | "lines" | "points")[];
   run: (conn: AsyncDuckDBConnection, columns: string[]) => Promise<CheckResult>;
 }
 
@@ -39,6 +39,10 @@ export interface HierarchyCheck {
   name: string;
   label: string;
   specSection: string;
-  appliesToPair: 'adjacent-admin';
-  run: (conn: AsyncDuckDBConnection, parent: LayerContext, child: LayerContext) => Promise<CheckResult>;
+  appliesToPair: "adjacent-admin";
+  run: (
+    conn: AsyncDuckDBConnection,
+    parent: LayerContext,
+    child: LayerContext,
+  ) => Promise<CheckResult>;
 }

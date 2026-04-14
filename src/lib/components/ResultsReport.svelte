@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { checks, hierarchyChecks } from '$lib/checks/registry';
-  import type { DatasetResult } from '$lib/runner';
-  import CheckRow from './CheckRow.svelte';
+  import { checks, hierarchyChecks } from "$lib/checks/registry";
+  import type { DatasetResult } from "$lib/runner";
+  import CheckRow from "./CheckRow.svelte";
 
   const allChecks = [...checks, ...hierarchyChecks];
 
@@ -22,9 +22,9 @@
 
   <div class="summary" class:all-passed={allPassed} class:has-issues={!allPassed}>
     {result.files.length}
-    {result.files.length === 1 ? 'layer' : 'layers'} checked &nbsp;·&nbsp;
+    {result.files.length === 1 ? "layer" : "layers"} checked &nbsp;·&nbsp;
     {totalViolations}
-    {totalViolations === 1 ? 'violation' : 'violations'}
+    {totalViolations === 1 ? "violation" : "violations"}
     {#if allPassed}
       &nbsp;— all checks passed
     {/if}

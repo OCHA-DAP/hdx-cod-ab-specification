@@ -1,5 +1,5 @@
-import type { AsyncDuckDBConnection } from '@duckdb/duckdb-wasm';
-import type { CheckResult, HierarchyCheck, LayerContext } from './types.ts';
+import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
+import type { CheckResult, HierarchyCheck, LayerContext } from "./types.ts";
 
 /** Maximum child feature count before the containment sub-check is skipped. */
 const CONTAINMENT_FEATURE_LIMIT = 50000;
@@ -13,7 +13,7 @@ async function findGeomColumn(
 ): Promise<string | null> {
   const desc = await conn.query(`DESCRIBE ${tableName}`);
   const cols = desc.toArray() as Array<{ column_name: string; column_type: string }>;
-  return cols.find((r) => r.column_type === 'GEOMETRY')?.column_name ?? null;
+  return cols.find((r) => r.column_type === "GEOMETRY")?.column_name ?? null;
 }
 
 /**
@@ -25,7 +25,7 @@ function identifierExpr(columns: string[], level: number): { expr: string; label
   if (columns.includes(pcode)) return { expr: `${JSON.stringify(pcode)}::VARCHAR`, label: pcode };
   const name = `adm${level}_name`;
   if (columns.includes(name)) return { expr: `${JSON.stringify(name)}::VARCHAR`, label: name };
-  return { expr: 'rn::VARCHAR', label: 'row' };
+  return { expr: "rn::VARCHAR", label: "row" };
 }
 
 /** Formats an array of IDs into a readable list with an overflow suffix. */
@@ -33,7 +33,7 @@ function formatIds(ids: unknown, label: string): string {
   const clean = Array.from(ids as Iterable<string | null>).filter((v): v is string => v != null);
   const shown = clean.slice(0, MAX_IDS_SHOWN);
   const extra = clean.length - shown.length;
-  const list = shown.join(', ') + (extra > 0 ? ` (and ${extra} more)` : '');
+  const list = shown.join(", ") + (extra > 0 ? ` (and ${extra} more)` : "");
   return `${label}: ${list}`;
 }
 
@@ -50,7 +50,7 @@ async function run(
   const childGeom = await findGeomColumn(conn, child.tableName);
 
   if (!parentGeom || !childGeom) {
-    info.push('No GEOMETRY column found in one or both layers — containment checks skipped.');
+    info.push("No GEOMETRY column found in one or both layers — containment checks skipped.");
     return { passed: true, violations, warnings, info };
   }
 
@@ -162,7 +162,7 @@ async function run(
           (g) => `{"type":"Feature","geometry":${g},"properties":{"issueType":"boundary-cross"}}`,
         );
       if (crossFeatures.length > 0) {
-        overlayGeojson = `{"type":"FeatureCollection","features":[${crossFeatures.join(',')}]}`;
+        overlayGeojson = `{"type":"FeatureCollection","features":[${crossFeatures.join(",")}]}`;
       }
     }
 
@@ -184,9 +184,9 @@ async function run(
 }
 
 export const checkContainment: HierarchyCheck = {
-  name: 'check_containment',
-  label: 'Layer Containment',
-  specSection: 'Geometry',
-  appliesToPair: 'adjacent-admin',
+  name: "check_containment",
+  label: "Layer Containment",
+  specSection: "Geometry",
+  appliesToPair: "adjacent-admin",
   run,
 };
