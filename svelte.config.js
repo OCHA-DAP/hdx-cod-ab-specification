@@ -1,7 +1,6 @@
-import adapter from '@sveltejs/adapter-static';
 import { relative, sep } from 'node:path';
 
-/** @type {import('@sveltejs/kit').Config} */
+/** @type {import('@sveltejs/vite-plugin-svelte').SvelteConfig} */
 const config = {
   compilerOptions: {
     // Force runes mode for all project files; undefined for node_modules (let libraries opt in).
@@ -10,14 +9,6 @@ const config = {
       const relativePath = relative(import.meta.dirname, filename);
       const pathSegments = relativePath.toLowerCase().split(sep);
       return pathSegments.includes('node_modules') ? undefined : true;
-    },
-  },
-  kit: {
-    adapter: adapter({
-      fallback: 'index.html',
-    }),
-    paths: {
-      base: process.env.NODE_ENV === 'production' ? '/hdx-cod-ab-validator' : '',
     },
   },
 };

@@ -1,0 +1,11 @@
+{
+	"/": [
+		"src/routes/+page.ts"
+	],
+	"/prompt": [
+		"src/routes/prompt/+server.ts"
+	],
+	"/spec": [
+		"src/routes/spec/+server.ts"
+	]
+}

@@ -1,12 +1,8 @@
 node_modules
 
 # Output
-.output
-.vercel
-.netlify
-.wrangler
-/.svelte-kit
-/build
+/dist
+/.astro
 
 # OS
 .DS_Store
@@ -17,10 +13,6 @@ Thumbs.db
 .env.*
 !.env.example
 !.env.test
-
-# Vite
-vite.config.js.timestamp-*
-vite.config.ts.timestamp-*
 
 # User files
 CLAUDE.md

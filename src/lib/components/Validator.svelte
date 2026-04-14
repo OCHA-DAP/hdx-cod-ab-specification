@@ -1,17 +1,16 @@
 <script lang="ts">
   import FileUpload from '$lib/components/FileUpload.svelte';
   import ResultsReport from '$lib/components/ResultsReport.svelte';
-  import { duckdbState } from '$lib/db/duckdb.svelte';
+  import { duckdbState, initDuckDB } from '$lib/db/duckdb.svelte';
   import type { DatasetResult } from '$lib/runner';
   import { runValidation } from '$lib/runner';
   import { marked } from 'marked';
-  import { base } from '$app/paths';
   import { onMount, untrack } from 'svelte';
-  import overviewMd from '../../specs/boundaries/README.md?raw';
+  import overviewMd from '/specs/boundaries/README.md?raw';
 
   // Eagerly load all boundary source files. Adding/removing/reordering only
   // requires editing the `sources` list in specs/boundaries/README.md frontmatter.
-  const sourceModules = import.meta.glob('../../specs/boundaries/*.md', {
+  const sourceModules = import.meta.glob('/specs/boundaries/*.md', {
     query: '?raw',
     import: 'default',
     eager: true,
@@ -35,7 +34,7 @@
       const id = filename.replace('.md', '');
       const label = id.charAt(0).toUpperCase() + id.slice(1);
       const resolvedPath = srcPath.includes('/') ? srcPath : `specs/boundaries/${srcPath}`;
-    const md = sourceModules[`../../${resolvedPath}`] ?? '';
+    const md = sourceModules[`/${resolvedPath}`] ?? '';
       return { id, label, md };
     }),
   ];
@@ -51,7 +50,7 @@
   async function copyPrompt() {
     copyState = 'copying';
     try {
-      const res = await fetch(`${base}/prompt`);
+      const res = await fetch(`${import.meta.env.BASE_URL}prompt`);
       const text = await res.text();
       await navigator.clipboard.writeText(text);
       copyState = 'copied';
@@ -79,6 +78,8 @@
   }
 
   onMount(() => {
+    initDuckDB();
+
     const { show, tab } = parseHash(window.location.hash);
     showSpec = show;
     activeTab = tab;
